@@ -1,0 +1,118 @@
+{
+  "model": "simplecnn",
+  "seed": 20261029,
+  "image_size": 224,
+  "batch_size": 32,
+  "max_epochs": 15,
+  "learning_rate": 0.001,
+  "optimizer": "Adam",
+  "augmentation": "RandomHorizontalFlip, RandomRotation(10), paramètres tirés une fois par lot",
+  "selection": "meilleure macro-F1 de validation",
+  "best_epoch": 13,
+  "best_val_macro_f1": 0.8498175787728027,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 6.570119317762837,
+      "val_macro_f1": 0.6567053071308513,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.5970585527185925,
+      "val_macro_f1": 0.6988615441675701,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.5964104506916895,
+      "val_macro_f1": 0.5427968224432834,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.5885908070332063,
+      "val_macro_f1": 0.7114816408491107,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.534652803429143,
+      "val_macro_f1": 0.68750660163579,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.5081513309048746,
+      "val_macro_f1": 0.7077112184280728,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.48288462826149736,
+      "val_macro_f1": 0.7800315281911833,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.5063775268967501,
+      "val_macro_f1": 0.7898577269222852,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.514466525079731,
+      "val_macro_f1": 0.7834372764389448,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.5218141986157947,
+      "val_macro_f1": 0.7125829725829725,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.5196583322389331,
+      "val_macro_f1": 0.8273558192775767,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.4705901290168743,
+      "val_macro_f1": 0.653523303308284,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.4630143546866988,
+      "val_macro_f1": 0.8498175787728027,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.5035632038880924,
+      "val_macro_f1": 0.6927562322864249,
+      "val_macro_f1_undefined": null
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.44003953269583906,
+      "val_macro_f1": 0.7978518283277379,
+      "val_macro_f1_undefined": null
+    }
+  ],
+  "n_train": 1996,
+  "n_val": 292,
+  "n_test": 776,
+  "weights_file": "simplecnn_figshare_v1.pt",
+  "weights_sha256": "7b17a4a31fcbbb3eec1327c28994cfcc62e5cab45ba3bcadf34690f10f5127d2",
+  "code_commit": "dedb768fa6da3b20a9dff94817feb4b6dfa641ba",
+  "duration_s": 168.5,
+  "device": "NVIDIA GeForce GTX 1650",
+  "python": "3.12.6",
+  "torch": "2.14.1+cu126",
+  "torchvision": "0.29.1+cu126",
+  "cuda": "12.6",
+  "determinism": "partiel : graines fixées et algorithmes déterministes demandés (warn_only) ; certaines opérations CUDA (rétropropagation du pooling) n'ont pas de version déterministe"
+}

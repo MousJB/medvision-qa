@@ -1,0 +1,54 @@
+{
+  "dataset": "mohamadabouali1/mri-brain-tumor-dataset-4-class-7023-images",
+  "n_images": 7023,
+  "subsets": [
+    "Testing",
+    "Training"
+  ],
+  "images_per_subset_and_label": {
+    "Testing/glioma": 300,
+    "Testing/meningioma": 306,
+    "Testing/no-tumor": 405,
+    "Testing/pituitary": 300,
+    "Training/glioma": 1321,
+    "Training/meningioma": 1339,
+    "Training/no-tumor": 1595,
+    "Training/pituitary": 1457
+  },
+  "image_sizes": {
+    "224x224": 7023
+  },
+  "exact_file_duplicate_groups": 300,
+  "exact_pixel_duplicate_groups": 300,
+  "exact_pixel_duplicate_pairs_by_location": {
+    "dans Testing": 30,
+    "Testing ↔ Training": 263,
+    "dans Training": 133
+  },
+  "near_duplicate_threshold": 4,
+  "near_duplicate_pairs_total": 6450,
+  "near_duplicate_pairs_by_location": {
+    "dans Testing": 278,
+    "Testing ↔ Training": 2250,
+    "dans Training": 3922
+  },
+  "near_duplicate_pairs_with_different_labels": 50,
+  "provenance_vs_figshare": {
+    "figshare_images": 3064,
+    "mri_bt_images_matching_a_figshare_image": 1704,
+    "by_subset_and_label": {
+      "Testing/glioma": 74,
+      "Testing/meningioma": 28,
+      "Testing/no-tumor": 1,
+      "Testing/pituitary": 67,
+      "Training/glioma": 130,
+      "Training/meningioma": 655,
+      "Training/no-tumor": 2,
+      "Training/pituitary": 747
+    },
+    "label_agreement": {
+      "true": 2574,
+      "false": 42
+    }
+  }
+}

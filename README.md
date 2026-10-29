@@ -20,8 +20,18 @@ Record*.
 | 1 | Validation CSV, métriques, intervalles de confiance | terminée (API Python) |
 | 2 | Comparaison statistique, moteur de décision | terminée (API Python) |
 | 3 | Rapport HTML | terminée (ligne de commande) |
-| 4 | Analyse d'images IRM (conditionnelle) | à faire |
+| 4 | Analyse d'images IRM réelles | terminée : [experiments/brain_mri/](experiments/brain_mri/README.md) |
 | 5 | Interface web locale (FastAPI) | terminée |
+
+## Résultat sur données IRM réelles
+
+Deux versions entraînées sur le dataset public figshare (CC BY 4.0), test disjoint par
+patient (64 patients), critères fixés avant entraînement : **INCONCLUSIVE**. ResNet18 est
+non inférieure à SimpleCNN et a une meilleure AUROC, mais sa sensibilité gliome (0,929,
+IC [0,865 ; 0,970]) ne démontre pas le seuil de 0,90. L'audit des données a aussi relevé
+des identifiants patient dupliqués dans figshare et **16,5 % d'images de test copiées dans
+l'entraînement** dans le dataset Kaggle MRI-BT. Détails :
+[experiments/brain_mri/README.md](experiments/brain_mri/README.md).
 
 ## Démonstration (données synthétiques)
 

@@ -1,6 +1,6 @@
 # Phase 4 — Sources de données et plan (préparation)
 
-Date : 2026-10-29. Rien n'a encore été téléchargé. Les licences et métadonnées ci-dessous
+Date : 2026-10-29. **Mise en œuvre : voir [experiments/brain_mri/README.md](../experiments/brain_mri/README.md).** Les licences et métadonnées ci-dessous
 ont été lues via les API officielles (figshare, Kaggle, GitHub) à cette date.
 
 ## 1. Datasets candidats

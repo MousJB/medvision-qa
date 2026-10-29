@@ -17,18 +17,22 @@ positive = ["glioma"]   # gliome contre méningiome + adénome hypophysaire
 [data]
 ground_truth_mode = "separate_file"
 ground_truth_file = "ground_truth.csv"
-description = "figshare brain tumor dataset v8 (DOI 10.6084/m9.figshare.1512427.v8), 3 064 coupes T1 avec gadolinium, 233 patients. Test = 30 % des patients, tirés par classe (graine 20261029) ; aucun patient commun avec l'entraînement ni la validation."
+description = "figshare brain tumor dataset v8 (DOI 10.6084/m9.figshare.1512427.v8), 3 064 coupes T1 avec gadolinium, 233 PID regroupés en 209 patients (les PID MR<n><lettre> de même racine sont fusionnés, voir README.md). Test = 30 % des patients, tirés par classe (graine 20261029) ; aucun patient commun avec l'entraînement ni la validation."
 nature = "clinical"
-manifest_sha256 = ""
+manifest_sha256 = "19bd2870d659c7c1035c390d75700599b3832d3b04e5f4e13e2d24a8e93cba1d"
 
 [versions.A]
 id = "simplecnn-figshare-v1"
+code_commit = "2bcfb779e281476e4f74470fd5cd3688ef2f279e"
+weights_sha256 = "7b17a4a31fcbbb3eec1327c28994cfcc62e5cab45ba3bcadf34690f10f5127d2"
 predictions_file = "preds_simplecnn.csv"
 preprocessing = "min-max par image vers uint8 (comme le README figshare), niveaux de gris, redimensionnement 224×224, normalisation [0, 1] puis (x − 0,5) / 0,5"
 description = "SimpleCNN (3 blocs conv + BN, dropout 0,5), architecture du dépôt brain-tumor-mri-classification, entraîné depuis zéro"
 
 [versions.B]
 id = "resnet18-figshare-v1"
+code_commit = "2bcfb779e281476e4f74470fd5cd3688ef2f279e"
+weights_sha256 = "a8901dd2c84608fd77c0d902b467b8675a01b06a76e4c8a967e422fd225d73f5"
 predictions_file = "preds_resnet18.csv"
 preprocessing = "min-max par image vers uint8, image dupliquée sur 3 canaux, redimensionnement 224×224, normalisation ImageNet"
 description = "ResNet18 pré-entraîné ImageNet (torchvision), toutes les couches ré-entraînées"
