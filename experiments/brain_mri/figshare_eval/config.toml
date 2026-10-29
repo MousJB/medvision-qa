@@ -1,0 +1,63 @@
+# Évaluation MedVision QA sur données IRM RÉELLES (figshare, Jun Cheng, CC BY 4.0).
+#
+# Protocole et critères fixés AVANT tout entraînement (voir l'historique git de ce fichier).
+# Après l'entraînement, seules les métadonnées (commit, hashes des poids, description) sont
+# complétées. Les sections [classes], [statistics], [sample_size] et [[criteria]] ne doivent
+# pas changer.
+schema_version = "0.1"
+
+[evaluation]
+title = "IRM figshare (3 classes) — SimpleCNN (A) vs ResNet18 (B)"
+objective = "Vérifier, sur un test disjoint par patient, que ResNet18 n'est pas inférieur à SimpleCNN en macro-F1, que sa sensibilité gliome atteint 0,90, et tester la supériorité de son AUROC gliome contre autres."
+
+[classes]
+order = ["glioma", "meningioma", "pituitary"]
+positive = ["glioma"]   # gliome contre méningiome + adénome hypophysaire
+
+[data]
+ground_truth_mode = "separate_file"
+ground_truth_file = "ground_truth.csv"
+description = "figshare brain tumor dataset v8 (DOI 10.6084/m9.figshare.1512427.v8), 3 064 coupes T1 avec gadolinium, 233 patients. Test = 30 % des patients, tirés par classe (graine 20261029) ; aucun patient commun avec l'entraînement ni la validation."
+nature = "clinical"
+manifest_sha256 = ""
+
+[versions.A]
+id = "simplecnn-figshare-v1"
+predictions_file = "preds_simplecnn.csv"
+preprocessing = "min-max par image vers uint8 (comme le README figshare), niveaux de gris, redimensionnement 224×224, normalisation [0, 1] puis (x − 0,5) / 0,5"
+description = "SimpleCNN (3 blocs conv + BN, dropout 0,5), architecture du dépôt brain-tumor-mri-classification, entraîné depuis zéro"
+
+[versions.B]
+id = "resnet18-figshare-v1"
+predictions_file = "preds_resnet18.csv"
+preprocessing = "min-max par image vers uint8, image dupliquée sur 3 canaux, redimensionnement 224×224, normalisation ImageNet"
+description = "ResNet18 pré-entraîné ImageNet (torchvision), toutes les couches ré-entraînées"
+
+[statistics]
+confidence_level = 0.95
+bootstrap_resamples = 2000
+seed = 20261029
+
+[sample_size]
+status = "based_on_data_availability"
+justification = "Taille fixée par le dataset public (233 patients) et la règle de séparation 60/10/30 par patient. Aucun calcul de puissance n'a été fait."
+
+[[criteria]]
+id = "C1"
+description = "Macro-F1 de ResNet18 non inférieure à celle de SimpleCNN (marge 0,03)"
+kind = "non_inferiority"
+metric = "macro_f1"
+margin = 0.03
+
+[[criteria]]
+id = "C2"
+description = "Sensibilité gliome (contre autres) de ResNet18 ≥ 0,90"
+kind = "absolute"
+metric = "sensitivity"
+threshold = 0.90
+
+[[criteria]]
+id = "C3"
+description = "AUROC gliome (contre autres) de ResNet18 supérieure à celle de SimpleCNN"
+kind = "superiority"
+metric = "auroc"
