@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}MedVision QA{% endblock %}</title>
+<style>
+  :root { --fg:#1d232a; --muted:#5b6672; --line:#d5dbe1; --bg-alt:#f4f6f8; --accent:#1f4e79;
+          --ok:#1f6f3f; --ok-bg:#e4f3ea; --ko:#a32222; --ko-bg:#fbe7e7; --inc:#8a5a00; --inc-bg:#fdf1d8; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--fg);
+         max-width: 1000px; margin: 0 auto; padding: 24px; }
+  header.top { display: flex; justify-content: space-between; align-items: baseline;
+               border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+  header.top a { color: var(--fg); text-decoration: none; font-weight: 700; font-size: 1.2rem; }
+  h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 28px; }
+  a { color: var(--accent); }
+  .muted, .note { color: var(--muted); } .note { font-size: .85rem; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+  th { background: var(--bg-alt); }
+  .state { display: inline-block; padding: 1px 8px; border-radius: 4px; font-weight: 700; font-size: .85rem; }
+  .SATISFIED { color: var(--ok); background: var(--ok-bg); }
+  .NOT_SATISFIED { color: var(--ko); background: var(--ko-bg); }
+  .INCONCLUSIVE { color: var(--inc); background: var(--inc-bg); }
+  .rejected { color: var(--muted); font-style: italic; }
+  .errors { border: 1px solid var(--ko); background: var(--ko-bg); padding: 8px 16px; }
+  .errors li { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; }
+  form.upload { border: 1px solid var(--line); padding: 16px; background: var(--bg-alt); }
+  form.upload label { display: block; font-weight: 600; margin-top: 12px; }
+  button { margin-top: 16px; padding: 6px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+  .actions a { margin-right: 16px; }
+  footer { margin-top: 40px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<header class="top"><a href="/">MedVision QA</a><span class="muted">usage local · aucune donnée n'est envoyée sur Internet</span></header>
+{% block content %}{% endblock %}
+<footer class="note"><p>Outil d'aide à l'évaluation technique. Ce n'est ni un dispositif médical, ni une validation clinique, ni une preuve de conformité réglementaire.</p></footer>
+</body>
+</html>

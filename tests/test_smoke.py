@@ -19,5 +19,5 @@ def test_core_dependencies_importable():
 
 def test_phase0_documents_exist():
     for doc in ("README.md", "MEDVISION_QA.md", "docs/data_format.md",
-                "docs/evaluation_config.md", "docs/phase0_inspection.md", "docs/metrics.md", "docs/comparison.md", "docs/report.md"):
+                "docs/evaluation_config.md", "docs/phase0_inspection.md", "docs/metrics.md", "docs/comparison.md", "docs/report.md", "docs/web.md"):
         assert (ROOT / doc).is_file(), doc

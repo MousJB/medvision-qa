@@ -21,9 +21,18 @@ Record*.
 | 2 | Comparaison statistique, moteur de décision | terminée (API Python) |
 | 3 | Rapport HTML | terminée (ligne de commande) |
 | 4 | Analyse d'images IRM (conditionnelle) | à faire |
-| 5 | Interface FastAPI | à faire |
+| 5 | Interface web locale (FastAPI) | terminée |
 
 ## Démonstration (données synthétiques)
+
+Interface web (import des fichiers, résultat, historique, téléchargement du rapport) :
+
+```bash
+python -m medvision_qa.web        # puis ouvrir http://127.0.0.1:8000
+```
+
+Les fichiers de démonstration sont téléchargeables depuis la page d'accueil. En ligne de
+commande :
 
 ```bash
 python -m medvision_qa examples/synthetic_demo/config.toml -o reports/demo.html
@@ -63,6 +72,7 @@ Une entrée invalide lève `ValidationError`, dont `.issues` liste toutes les vi
 - [docs/evaluation_config.md](docs/evaluation_config.md) : configuration, critères d'acceptation, règles de décision
 - [docs/comparison.md](docs/comparison.md) : comparaison appariée A/B, McNemar, statut de DeLong, traçabilité
 - [docs/report.md](docs/report.md) : contenu du Version Verification Record et propriétés garanties
+- [docs/web.md](docs/web.md) : interface web, stockage local, mesures de sécurité
 - [docs/phase0_inspection.md](docs/phase0_inspection.md) : inspection de l'environnement, du dépôt IRM et du dataset
 
 ## Installation (développement)
@@ -76,9 +86,12 @@ python -m venv .venv
 # Linux / macOS
 source .venv/bin/activate
 
-pip install -e ".[dev]"
+pip install -e ".[dev]"      # bibliothèque + interface web + outils de test
 pytest
 ```
+
+`pip install -e .` seul installe le cœur (validation, statistiques, rapport, ligne de
+commande) sans FastAPI. L'extra `[web]` ajoute l'interface.
 
 Pour reproduire exactement l'environnement testé : `pip install -r requirements-lock.txt`
 puis `pip install -e . --no-deps`.
@@ -86,7 +99,8 @@ puis `pip install -e . --no-deps`.
 ## Données et sécurité
 
 - Exécution locale uniquement : aucun appel réseau, aucun appel à un LLM ou à une API
-  externe pour analyser les données.
+  externe pour analyser les données. L'interface web n'écoute que sur `127.0.0.1` et ne
+  doit pas être exposée sur un réseau (pas d'authentification).
 - Aucun dataset n'est inclus ni téléchargé automatiquement. Le `.gitignore` exclut
   `data/`, les images médicales et les poids de modèles.
 - Pas de chargement de fichiers pickle ni de modèles : l'outil ne lit que des CSV et une

@@ -41,9 +41,10 @@ class EvaluationResult:
     decision: Decision
 
 
-def run_evaluation(config_path) -> EvaluationResult:
+def run_evaluation(config_path, run_id: str | None = None) -> EvaluationResult:
+    """``run_id`` : identifiant imposé (par ex. par l'interface web) ; UUID4 généré sinon."""
     run = RunInfo(
-        run_id=str(uuid.uuid4()),
+        run_id=run_id or str(uuid.uuid4()),
         started_at_utc=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         python=platform.python_version(),
         packages={name: package_version(name) for name in TRACKED_PACKAGES},

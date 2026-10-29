@@ -1,0 +1,45 @@
+{% extends "web_layout.html.j2" %}
+{% block content %}
+<h1>Nouvelle évaluation</h1>
+<p>Importer une configuration TOML et les CSV qu'elle référence. Les noms des CSV doivent correspondre exactement aux chemins de la configuration (par ex. <code>ground_truth_file = "ground_truth.csv"</code>).</p>
+
+{% if errors %}
+<div class="errors" role="alert"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
+{% endif %}
+
+<form class="upload" action="/evaluations" method="post" enctype="multipart/form-data">
+  <label for="config">Configuration (.toml)</label>
+  <input id="config" name="config" type="file" accept=".toml" required>
+  <label for="data_files">Fichiers CSV (vérité terrain, prédictions A et B ; {{ max_files }} au maximum)</label>
+  <input id="data_files" name="data_files" type="file" accept=".csv" multiple required>
+  <p class="note">{{ max_mb }} Mo maximum par fichier. Les fichiers d'une évaluation refusée sont supprimés aussitôt.</p>
+  <button type="submit">Lancer l'évaluation</button>
+</form>
+
+<p class="note">Exemple à télécharger (données <strong>synthétiques</strong>) :
+{% for name in example_files %}<a href="/examples/{{ name }}">{{ name }}</a>{{ " · " if not loop.last else "" }}{% endfor %}.
+Format : voir <code>docs/data_format.md</code> et <code>docs/evaluation_config.md</code>.</p>
+
+<h2>Historique</h2>
+{% if history %}
+<table>
+  <tr><th>Date (UTC)</th><th>Évaluation</th><th>Versions</th><th>Cas</th><th>Décision</th></tr>
+  {% for r in history %}
+  <tr>
+    <td>{{ r.created_at_utc }}</td>
+    {% if r.status == "completed" %}
+    <td><a href="/evaluations/{{ r.run_id }}">{{ r.title }}</a></td>
+    <td><code>{{ r.version_a }}</code>{% if r.version_b %} → <code>{{ r.version_b }}</code>{% endif %}</td>
+    <td>{{ r.n_cases }}</td>
+    <td><span class="state {{ r.decision }}">{{ r.decision }}</span></td>
+    {% else %}
+    <td class="rejected" colspan="3">évaluation refusée : {{ r.error.splitlines()[0] }}</td>
+    <td class="rejected">—</td>
+    {% endif %}
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">Aucune évaluation pour l'instant.</p>
+{% endif %}
+{% endblock %}

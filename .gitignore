@@ -29,3 +29,6 @@ data/
 reports/
 *.sqlite
 *.db
+
+# Interface web : évaluations et historique locaux
+medvision_data/
