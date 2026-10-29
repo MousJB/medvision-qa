@@ -1,0 +1,31 @@
+# Environnements
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Outils
+.pytest_cache/
+.coverage
+htmlcov/
+.vscode/
+.idea/
+
+# Données et artefacts : ne jamais versionner d'images médicales ni de poids de modèles
+data/
+*.dcm
+*.nii
+*.nii.gz
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.pickle
+
+# Sorties locales
+reports/
+*.sqlite
+*.db
