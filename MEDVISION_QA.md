@@ -3,7 +3,7 @@
 **Version :** 1.0  
 **Date de référence :** 29 octobre 2026  
 **Durée cible du MVP :** 30 jours  
-**Statut :** spécification de travail — les hypothèses commerciales et certains choix techniques restent à valider.
+**Statut :** spécification de travail — certains choix techniques restent à valider.
 
 ---
 
@@ -79,7 +79,7 @@ Ces profils sont des hypothèses de départ, pas des segments de marché déjà 
 - Conserver une trace des configurations et des artefacts utilisés.
 - Démontrer le workflow sur un exemple d’imagerie médicale, si les données et les droits d’utilisation le permettent.
 
-### Objectifs portfolio et emploi
+### Compétences démontrées
 
 Le projet doit démontrer :
 
@@ -92,13 +92,7 @@ Le projet doit démontrer :
 - reproductibilité et traçabilité ;
 - capacité à expliquer les limites scientifiques d’un résultat.
 
-Il doit être présentable à des entreprises d’IA médicale comme LPIXEL, sans prétendre que le projet est un produit certifié ou cliniquement validé.
-
-### Objectifs commerciaux
-
-Évaluer si le problème est suffisamment fréquent et coûteux pour justifier un outil dédié.
-
-Aucune demande commerciale, disposition à payer ou supériorité concurrentielle n’est considérée comme démontrée au départ.
+Il ne doit jamais être présenté comme un produit certifié ou cliniquement validé.
 
 ---
 
@@ -614,86 +608,7 @@ Ne pas annoncer « tous les tests passent » sans avoir réellement exécuté la
 
 ---
 
-## 16. Stratégie de validation commerciale
-
-Le projet est une hypothèse de produit. Il faut vérifier que le problème existe et qu’il est suffisamment important.
-
-### Entretiens à réaliser
-
-Interroger 3 à 5 personnes ayant une expérience réelle de ML médical, de recherche, de QA ou de vérification de modèles.
-
-Questions possibles :
-
-1. Comment comparez-vous actuellement deux versions d’un modèle ?
-2. Comment définissez-vous et approuvez-vous les critères d’acceptation ?
-3. Quelles informations devez-vous conserver pour reproduire une évaluation ?
-4. Qui examine les résultats et qui prend la décision finale ?
-5. Qu’est-ce qui est manuel, lent, fragile ou difficile à expliquer ?
-6. Quels outils utilisez-vous déjà et qu’est-ce qui manque ?
-7. Quelles exigences internes ou réglementaires influencent votre documentation ?
-8. Quelle serait la conséquence pratique d’un rapport incohérent ou incomplet ?
-9. Avez-vous déjà essayé de résoudre ce problème autrement ?
-10. Seriez-vous prêt à tester un prototype sur un cas non sensible ou des données autorisées ? Dans quelles conditions ?
-
-Éviter de se limiter à « Est-ce que vous aimez mon idée ? ». Chercher des exemples de problèmes réels, de solutions actuelles, de fréquence, de coût et de volonté de participer à un pilote.
-
-### Concurrence et positionnement
-
-Des outils de suivi d’expériences, des bibliothèques d’imagerie médicale et des plateformes de recherche existent, notamment MLflow, Weights & Biases et MONAI. Le projet ne doit pas affirmer qu’il n’existe pas de solution concurrente.
-
-Le positionnement à tester est un workflow ciblé de vérification comparative, avec critères prédéfinis, validation des entrées, incertitude, états de décision et rapport technique.
-
-### Signaux positifs
-
-- les interlocuteurs décrivent spontanément le même problème ;
-- ils expliquent une solution actuelle manuelle ou insuffisante ;
-- ils acceptent de tester un prototype sur un cas concret ;
-- ils demandent des changements spécifiques ;
-- ils identifient un responsable, un processus et un budget potentiels.
-
-Des compliments généraux ne suffisent pas à valider une demande commerciale.
-
----
-
-## 17. Stratégie portfolio et candidature LPIXEL
-
-### Pourquoi le projet est pertinent
-
-Il peut démontrer des compétences en :
-
-- Python ;
-- traitement de données d’imagerie médicale ;
-- évaluation de modèles ;
-- métriques et statistiques ;
-- tests automatisés ;
-- reproductibilité ;
-- traçabilité et documentation technique ;
-- communication rigoureuse des limites.
-
-### Ce qu’il faut montrer
-
-- un README clair ;
-- un schéma d’architecture simple ;
-- une démonstration de bout en bout ;
-- un rapport HTML réel généré par le programme ;
-- des tests automatisés ;
-- un exemple de comparaison de deux versions ;
-- une explication honnête des données utilisées et des limites ;
-- un historique Git lisible.
-
-### Ordre de priorité
-
-1. Postuler à LPIXEL avec le CV et le portfolio existants.
-2. Continuer MedVision QA par phases, avec tests verts.
-3. Envoyer ensuite une mise à jour avec une démonstration fonctionnelle.
-4. Ne pas attendre 30 jours avant de postuler.
-5. Ne pas présenter le projet comme validé cliniquement ou conforme à une réglementation.
-
-Vérifier les obligations contractuelles de l’emploi d’enseignant avant de commencer une activité rémunérée secondaire.
-
----
-
-## 18. Risques et mesures d’atténuation
+## 16. Risques et mesures d’atténuation
 
 | Risque | Mesure |
 |---|---|
@@ -703,14 +618,12 @@ Vérifier les obligations contractuelles de l’emploi d’enseignant avant de c
 | DeLong non vérifié | Ne pas revendiquer la validation ; utiliser un bootstrap apparié testé ou marquer l’option indisponible |
 | Périmètre trop large | Garder le noyau CSV → métriques → comparaison → décision → rapport |
 | Conclusion scientifique excessive | États explicites, limites visibles, critères préétablis |
-| Faible demande commerciale | Entretiens et pilotes avant de construire davantage |
 | Données sensibles | Exécution locale, minimisation, pas d’appels externes |
-| Projet trop lent pour le recrutement | Postuler en parallèle et livrer un MVP progressif |
 | Faux signal de fuite de données | Revue des doublons et vérification de provenance avant toute conclusion |
 
 ---
 
-## 19. Indicateurs de réussite
+## 17. Indicateurs de réussite
 
 ### Réussite technique du MVP
 
@@ -732,18 +645,9 @@ Vérifier les obligations contractuelles de l’emploi d’enseignant avant de c
 - le rapport expose les hypothèses et les limites ;
 - le projet permet de discuter de choix scientifiques et techniques en entretien.
 
-### Réussite commerciale initiale
-
-- 3 à 5 entretiens réalisés ;
-- les workflows existants sont documentés ;
-- les problèmes récurrents sont identifiés ou l’hypothèse est révisée ;
-- au moins une personne accepte éventuellement de tester un prototype sur un cas approprié.
-
-Ces indicateurs ne garantissent ni une embauche ni un revenu commercial.
-
 ---
 
-## 20. Règles de développement avec Claude Code
+## 18. Règles de développement avec Claude Code
 
 Le projet doit être développé **phase par phase**, pas en demandant à l’outil de générer toute l’application en une seule fois.
 
@@ -768,7 +672,7 @@ Le projet doit être développé **phase par phase**, pas en demandant à l’ou
 
 ---
 
-## 21. Décisions finales
+## 19. Décisions finales
 
 - **Nom :** MedVision QA.
 - **Livrable central :** Version Verification Record au format HTML.
@@ -781,8 +685,6 @@ Le projet doit être développé **phase par phase**, pas en demandant à l’ou
 - **Taille d’échantillon :** état explicite, aucune justification inventée.
 - **Rapport :** limites et non-objectifs visibles.
 - **Réglementation :** aucune revendication de certification ou de conformité.
-- **Commercialisation :** hypothèse à valider par des entretiens et des pilotes.
-- **Recrutement :** postuler en parallèle ; ne pas attendre la fin du projet.
 - **Durée cible :** 30 jours, ajustable selon les résultats, les données et les contraintes.
 
 ## Conclusion
