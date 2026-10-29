@@ -13,16 +13,25 @@ Japanese.
 > **MedVision QA is not a medical device**, a diagnostic tool, a clinical validation or
 > proof of regulatory compliance (ISO 13485, FDA QMSR or other).
 
-## Status
+## Engineering approach
 
-| Phase | Content | State |
+Each design choice below is checked by code, tests or the git history.
+
+| Choice | Why | Evidence |
 |---|---|---|
-| 0 | Scoping, formats, environment | done |
-| 1 | CSV validation, metrics, confidence intervals | done (Python API) |
-| 2 | Statistical comparison, decision engine | done (Python API) |
-| 3 | HTML report | done (command line) |
-| 4 | Analysis of real MRI images | done: [experiments/brain_mri/](experiments/brain_mri/README.md) |
-| 5 | Local web interface (FastAPI) | done |
+| Invalid input is rejected, never cleaned | A silently dropped row changes the metrics without anyone knowing | Every violation is reported with file, line, column and rule: [validation.py](src/medvision_qa/validation.py), [tests/test_validation.py](tests/test_validation.py) |
+| Cases are joined on `case_id`, never on row order | Two files in different orders would otherwise be compared case against wrong case | Missing or extra cases are errors: [alignment.py](src/medvision_qa/alignment.py), [tests/test_alignment.py](tests/test_alignment.py) |
+| Criteria are written before the results | Choosing a threshold after seeing the results biases the conclusion | The MRI criteria were committed in `6de2a12`, before any training. The report records the SHA-256 of the configuration |
+| Decisions use confidence-interval bounds only | A point estimate above a threshold is not evidence | The interval contains the threshold → INCONCLUSIVE, never SATISFIED. Non-inferiority needs a margin set in advance: [decision_engine.py](src/medvision_qa/decision_engine.py) |
+| Resampling by patient when `patient_id` is given | Slices of one patient are not independent; a per-image bootstrap gives intervals that are too narrow | Interval more than 2× too narrow on a synthetic example: [tests/test_confidence_intervals.py](tests/test_confidence_intervals.py). McNemar is disabled when pairs are clustered |
+| An undefined metric stays undefined | Replacing 0/0 with 0 makes a model look worse or better than it is | Each undefined value carries its reason: [docs/metrics.md](docs/metrics.md) |
+| Results are checked against independent code | A tool that checks models must itself be checked | Metrics against scikit-learn, McNemar against a hand-written exact test. The MRI results were recomputed separately: [docs/audit.md](docs/audit.md) |
+| What is not validated is not offered | An unvalidated test presented as reliable is worse than none | DeLong is not implemented (no independent reference). The AUROC difference uses the paired bootstrap |
+| Every report is traceable and reproducible | A result that cannot be traced cannot be audited | SHA-256 of the data, configuration and weights, plus commit, package versions and run ID. Regenerating a report changes only its run ID and date |
+| Limits are part of the output | A report that only shows numbers invites over-reading | Every report ends with "What This Report Cannot Establish". The open points are listed in [docs/audit.md](docs/audit.md#4-what-remains-unverified) |
+
+The automated tests run on every push (Linux and Windows, Python 3.11 and 3.12):
+[.github/workflows/tests.yml](.github/workflows/tests.yml).
 
 ## Result on real MRI data
 

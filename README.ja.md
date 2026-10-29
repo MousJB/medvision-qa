@@ -11,16 +11,25 @@
 > **MedVision QA は医療機器ではありません。** 診断ツール、臨床的妥当性確認、規制適合
 > （ISO 13485、FDA QMSR など）の証明のいずれでもありません。
 
-## 開発状況
+## エンジニアリング上の方針
 
-| フェーズ | 内容 | 状態 |
+以下の設計上の選択は、いずれもコード、テスト、または git の履歴で確認できます。
+
+| 選択 | 理由 | 根拠 |
 |---|---|---|
-| 0 | 範囲の確定、形式、環境 | 完了 |
-| 1 | CSV の検証、指標、信頼区間 | 完了（Python API） |
-| 2 | 統計的比較、判定エンジン | 完了（Python API） |
-| 3 | HTML レポート | 完了（コマンドライン） |
-| 4 | 実 MRI 画像での分析 | 完了: [experiments/brain_mri/](experiments/brain_mri/README.ja.md) |
-| 5 | ローカル Web インターフェース（FastAPI） | 完了 |
+| 不正な入力は修正せずに却下する | 黙って削除された行は、誰も気づかないまま指標を変えてしまう | すべての違反をファイル、行、列、規則とともに報告: [validation.py](src/medvision_qa/validation.py)、[tests/test_validation.py](tests/test_validation.py) |
+| 症例は行の順番ではなく `case_id` で結合する | 順番の異なる 2 つのファイルでは、別の症例どうしを比較してしまう | 欠けている症例や余分な症例はエラー: [alignment.py](src/medvision_qa/alignment.py)、[tests/test_alignment.py](tests/test_alignment.py) |
+| 基準は結果を見る前に書く | 結果を見てから閾値を選ぶと結論に偏りが生じる | MRI の基準は学習前にコミット `6de2a12` で確定。レポートには設定ファイルの SHA-256 を記録 |
+| 判定には信頼区間の境界のみを使う | 点推定が閾値を上回っても証拠にはならない | 区間が閾値を含む → INCONCLUSIVE（SATISFIED にはならない）。非劣性には事前に定めたマージンが必要: [decision_engine.py](src/medvision_qa/decision_engine.py) |
+| `patient_id` があれば患者単位で再標本化する | 同じ患者のスライスは独立ではなく、画像単位のブートストラップでは区間が狭すぎる | 合成データの例で区間が 2 倍以上狭くなることを確認: [tests/test_confidence_intervals.py](tests/test_confidence_intervals.py)。ペアがクラスター化している場合はマクネマー検定を無効化 |
+| 定義できない指標は未定義のままにする | 0/0 を 0 に置き換えると、モデルが実際より悪く（または良く）見える | 未定義の値にはそれぞれ理由が付く: [docs/ja/metrics.md](docs/ja/metrics.md) |
+| 結果を独立したコードで検証する | モデルを検証するツール自身も検証されるべき | 指標は scikit-learn と、マクネマー検定は手書きの正確検定と照合。MRI の結果は別途再計算: [docs/ja/audit.md](docs/ja/audit.md) |
+| 検証されていないものは提供しない | 信頼できるように見せた未検証の検定は、ないよりも悪い | DeLong 法は未実装（独立した参照実装がないため）。AUROC の差にはペア・ブートストラップを使用 |
+| すべてのレポートは追跡可能で再現可能 | 追跡できない結果は監査できない | データ、設定、重みの SHA-256、コミット、パッケージのバージョン、実行 ID を記録。レポートを再生成しても変わるのは実行 ID と日時のみ |
+| 限界も出力の一部とする | 数値だけのレポートは過大な解釈を招く | すべてのレポートの最後に「What This Report Cannot Establish」。未解決の点は [docs/ja/audit.md](docs/ja/audit.md#4-未検証のまま残る事項) に列挙 |
+
+自動テストはプッシュのたびに実行されます（Linux と Windows、Python 3.11 と 3.12）:
+[.github/workflows/tests.yml](.github/workflows/tests.yml)。
 
 ## 実 MRI データでの結果
 

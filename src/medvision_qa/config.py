@@ -9,7 +9,7 @@ import math
 import re
 import tomllib
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from medvision_qa.alignment import EMBEDDED, SEPARATE_FILE
 from medvision_qa.classes import ClassSpec, ConfigError
@@ -136,9 +136,12 @@ def _data_path(base: Path, value: str, where: str) -> Path:
     """Path relative to the configuration folder, without leaving that folder."""
     if value == "":
         raise ConfigError(msg("cfg.empty", where=where))
-    relative = Path(value)
-    if relative.is_absolute() or relative.drive:
+    # Absolute under either convention, whatever the OS: the same configuration is rejected
+    # for the same reason on Windows and on Linux.
+    windows = PureWindowsPath(value)
+    if PurePosixPath(value).is_absolute() or windows.drive or windows.root:
         raise ConfigError(msg("cfg.absolute_path", where=where))
+    relative = Path(value)
     resolved = (base / relative).resolve()
     if not resolved.is_relative_to(base):
         raise ConfigError(msg("cfg.path_escapes", where=where, value=repr(value)))

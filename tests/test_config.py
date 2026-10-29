@@ -98,6 +98,8 @@ def test_documented_example_is_valid(tmp_path, doc_path):
     ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "missing.csv"'}, "file not found"),
     ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "../gt.csv"'}, "leaves the configuration folder"),
     ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "C:/gt.csv"'}, "absolute path"),
+    ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "/gt.csv"'}, "absolute path"),
+    ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "C:gt.csv"'}, "absolute path"),
     ({'ground_truth_mode = "separate_file"': 'ground_truth_mode = "embedded"'}, "must be empty in 'embedded' mode"),
     ({'id = "v2"': 'id = "v1"'}, "must differ"),
     ({'id = "v1"\n': 'id = "v1"\ncode_commit = "main"\n'}, "commit"),
