@@ -1,5 +1,7 @@
 # MedVision QA
 
+[![tests](https://github.com/MousJB/medvision-qa/actions/workflows/tests.yml/badge.svg)](https://github.com/MousJB/medvision-qa/actions/workflows/tests.yml)
+
 [日本語](README.ja.md)
 
 A tool for the comparative verification and technical documentation of medical image
@@ -158,7 +160,8 @@ Every document has a Japanese version in [docs/ja/](docs/ja/).
 
 ## Installation (development)
 
-Python ≥ 3.11 (tested with Python 3.12.6 on Windows 10 only).
+Python ≥ 3.11. Tested by CI on Ubuntu and Windows (Python 3.12, locked dependencies) and
+on Ubuntu with Python 3.11 (latest dependencies); developed on Windows 10, Python 3.12.6.
 
 ```bash
 python -m venv .venv

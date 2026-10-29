@@ -19,7 +19,8 @@ clinical validation or a regulatory assessment.
 | Web interface, real server | `python -m medvision_qa.web`, driven with `curl` | upload → 303 → result page; report downloaded (EN, JA); invalid upload → 422 with the reason; `..` paths → 404/400; no file kept for a rejected run |
 | Downloaded report | `grep` on the file | no `<script>`, no external resource; "What This Report Cannot Establish" section present |
 | Secrets and data in git | `git log --all -p` searched for keys, tokens, passwords; list of every file ever committed | none; no image, weight file or database ever committed |
-| Test suite, after the fixes | `.venv\Scripts\python -m pytest` | 873 passed, 0 failed, 0 skipped |
+| Test suite, after the fixes | `.venv\Scripts\python -m pytest` | 875 passed, 0 failed, 0 skipped |
+| Continuous integration (added by this audit) | [tests.yml](../.github/workflows/tests.yml): Ubuntu and Windows with the lock file (Python 3.12), Ubuntu with the latest dependencies (Python 3.11) | first run: 1 failure on both Ubuntu jobs (finding below); after the fix, 875 passed on all three |
 
 ## 2. Independent verifications
 
@@ -53,9 +54,11 @@ No P0 finding. Every finding below is fixed, except those marked "not fixed".
 | P2 | A missing configuration file gave a Python traceback (exit code 1) instead of an error message. | `python -m medvision_qa missing.toml -o x.html` | `ConfigError` "Unreadable configuration", exit code 2; two regression tests. |
 | P2 | The report said a high p-value proves nothing, but not that a low p-value does not measure practical or clinical importance. | `r.mcnemar_note` in `i18n.py` | Sentence added (EN, JA), in the report and in `docs/comparison.md`; test added; MRI reports regenerated (numbers unchanged). |
 | P2 | The README had no architecture overview and no input/output example; GitHub shows the HTML reports as source code. | `README.md` | Sections added (EN, JA), with real outputs of the tool. |
-| P2 | The README gave "Python ≥ 3.11" while only Python 3.12.6 was tested. | `docs/phase0_inspection.md` | Tested version stated. |
+| P2 | The README gave "Python ≥ 3.11" while only Python 3.12.6 was tested. | `docs/phase0_inspection.md` | Tested versions stated; now checked by CI. |
+| P2 | On Linux, `C:/gt.csv` in a configuration was not seen as an absolute path. It was still rejected, but as "file not found". Found by the first CI run. | `config.py`, `_data_path` | Paths absolute under the POSIX or the Windows convention are rejected as absolute on every OS; two test cases added. |
 | P3 | scikit-learn is a runtime dependency but is only used by the tests (and its version is recorded in the report). | `grep sklearn src/` | Not fixed: changing it would change the report's traceability fields, for no user benefit. |
-| P3 | No lint configuration, no continuous integration. | no `ruff`/`flake8` config, no `.github/` | Not fixed: outside the MVP. The lint above was run by hand. |
+| P2 | No continuous integration: nothing showed publicly that the tests pass, and Linux and Python 3.11 were never tested. | no `.github/` | GitHub Actions workflow added (see § 1). |
+| P3 | No lint configuration. | no `ruff`/`flake8` config | Not fixed: outside the MVP. The lint above was run by hand. |
 
 ## 4. What remains unverified
 
@@ -74,7 +77,7 @@ No P0 finding. Every finding below is fixed, except those marked "not fixed".
 - **Pre-registration** can only be checked through the git history (commit `6de2a12`);
   the tool cannot prove it.
 - The report was checked through HTTP and its content, not visually in every browser.
-- Python 3.11, Linux and macOS were not tested.
+- macOS was not tested.
 
 ## 5. Demonstration (3 to 5 minutes)
 

@@ -1,5 +1,7 @@
 # MedVision QA
 
+[![tests](https://github.com/MousJB/medvision-qa/actions/workflows/tests.yml/badge.svg)](https://github.com/MousJB/medvision-qa/actions/workflows/tests.yml)
+
 [English](README.md)
 
 医用画像分類モデルのバージョンを比較検証し、技術的に記録するためのツールです。
@@ -154,7 +156,8 @@ uvicorn、python-multipart が加わります。
 
 ## インストール（開発用）
 
-Python 3.11 以上（テスト済みの環境は Windows 10 上の Python 3.12.6 のみ）。
+Python 3.11 以上。CI で Ubuntu と Windows（Python 3.12、ロックした依存関係）、および Ubuntu の
+Python 3.11（最新の依存関係）でテスト済み。開発環境は Windows 10、Python 3.12.6。
 
 ```bash
 python -m venv .venv
