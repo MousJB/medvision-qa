@@ -6,18 +6,21 @@ l'échantillon complet et dans chaque rééchantillon.
 """
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
 
 from medvision_qa.alignment import AlignedData
 from medvision_qa.classes import ConfigError
-from medvision_qa.metrics import MetricValue, compute_metrics, metric_keys
+from medvision_qa.metrics import MetricValue, compute_metrics
 
 MIN_RESAMPLES = 1000
 SMALL_SAMPLE_UNITS = 30
 METHOD = "percentile"
 QUANTILE_METHOD = "linear"
+ZERO_WIDTH_WARNING = ("intervalle de largeur nulle : le bootstrap percentile sous-estime "
+                      "l'incertitude quand la métrique est constante (par ex. à sa borne 0 ou 1)")
 
 
 @dataclass(frozen=True)
@@ -42,6 +45,10 @@ class ConfidenceInterval:
     @property
     def defined(self) -> bool:
         return self.lower is not None
+
+    @property
+    def zero_width(self) -> bool:
+        return self.defined and self.lower == self.upper
 
 
 @dataclass(frozen=True)
@@ -77,57 +84,66 @@ def resample_indices(rng: np.random.Generator, n_cases: int,
     return np.concatenate([members[g] for g in drawn])
 
 
-def bootstrap_metrics(data: AlignedData, version: str, *, n_resamples: int,
-                      confidence_level: float, seed: int) -> BootstrapResult:
+def bootstrap_settings(data: AlignedData, n_resamples: int, confidence_level: float,
+                       seed: int) -> tuple[BootstrapSettings, list[np.ndarray] | None]:
     validate_settings(n_resamples, confidence_level, seed)
-    if version not in data.y_pred:
-        raise KeyError(f"Version inconnue : {version!r} (disponibles : {list(data.y_pred)}).")
-
-    classes = data.classes
-    y_true, y_pred, scores = data.y_true, data.y_pred[version], data.scores[version]
-    unit = "patient" if data.groups is not None else "case"
     members = group_members(data.groups) if data.groups is not None else None
+    unit = "patient" if members is not None else "case"
     n_units = len(members) if members is not None else data.n_cases
-    settings = BootstrapSettings(n_resamples, float(confidence_level), seed, unit, n_units)
+    return BootstrapSettings(n_resamples, float(confidence_level), seed, unit, n_units), members
 
-    estimates = compute_metrics(classes, y_true, y_pred, scores)
-    keys = metric_keys(classes)
-    samples = {k: np.empty(n_resamples) for k in keys}
-    undefined_counts = dict.fromkeys(keys, 0)
 
-    rng = np.random.default_rng(seed)
-    for r in range(n_resamples):
-        idx = resample_indices(rng, data.n_cases, members)
-        values = compute_metrics(classes, y_true[idx], y_pred[idx],
-                                 scores[idx] if scores is not None else None)
-        for k in keys:
+def run_bootstrap(data: AlignedData, settings: BootstrapSettings, members,
+                  statistic: Callable[[np.ndarray], dict[str, MetricValue]]) -> dict[str, ConfidenceInterval]:
+    """Applique ``statistic`` (indices de cas → métriques) à l'échantillon complet puis à chaque
+    rééchantillonnage, et construit un intervalle percentile par clé."""
+    estimates = statistic(np.arange(data.n_cases))
+    samples = {k: np.empty(settings.n_resamples) for k in estimates}
+    undefined_counts = dict.fromkeys(estimates, 0)
+
+    rng = np.random.default_rng(settings.seed)
+    for r in range(settings.n_resamples):
+        values = statistic(resample_indices(rng, data.n_cases, members))
+        for k in estimates:
             if values[k].defined:
                 samples[k][r] = values[k].value
             else:
                 undefined_counts[k] += 1
 
-    alpha = 1 - confidence_level
-    intervals = {}
-    for k in keys:
-        estimate = estimates[k]
-        if not estimate.defined:
-            intervals[k] = ConfidenceInterval(estimate, None, None,
-                                              f"métrique indéfinie : {estimate.undefined_reason}", ())
-            continue
-        if undefined_counts[k]:
-            intervals[k] = ConfidenceInterval(
-                estimate, None, None,
-                f"métrique indéfinie dans {undefined_counts[k]}/{n_resamples} rééchantillonnages ; "
-                "les écarter biaiserait l'intervalle", ())
-            continue
-        lower, upper = np.quantile(samples[k], [alpha / 2, 1 - alpha / 2], method=QUANTILE_METHOD)
-        warnings = []
-        if lower == upper:
-            warnings.append("intervalle de largeur nulle : le bootstrap percentile sous-estime "
-                            "l'incertitude quand la métrique est constante (par ex. à sa borne 0 ou 1)")
-        if n_units < SMALL_SAMPLE_UNITS:
-            warnings.append(f"{n_units} unité(s) de rééchantillonnage (< {SMALL_SAMPLE_UNITS}) : "
-                            "couverture du bootstrap percentile non garantie")
-        intervals[k] = ConfidenceInterval(estimate, float(lower), float(upper), None, tuple(warnings))
+    return {k: _interval(estimates[k], samples[k], undefined_counts[k], settings) for k in estimates}
 
-    return BootstrapResult(version, settings, intervals)
+
+def _interval(estimate: MetricValue, samples: np.ndarray, undefined_count: int,
+              settings: BootstrapSettings) -> ConfidenceInterval:
+    if not estimate.defined:
+        return ConfidenceInterval(estimate, None, None,
+                                  f"métrique indéfinie : {estimate.undefined_reason}", ())
+    if undefined_count:
+        return ConfidenceInterval(
+            estimate, None, None,
+            f"métrique indéfinie dans {undefined_count}/{settings.n_resamples} rééchantillonnages ; "
+            "les écarter biaiserait l'intervalle", ())
+    alpha = 1 - settings.confidence_level
+    lower, upper = np.quantile(samples, [alpha / 2, 1 - alpha / 2], method=QUANTILE_METHOD)
+    warnings = []
+    if lower == upper:
+        warnings.append(ZERO_WIDTH_WARNING)
+    if settings.n_units < SMALL_SAMPLE_UNITS:
+        warnings.append(f"{settings.n_units} unité(s) de rééchantillonnage (< {SMALL_SAMPLE_UNITS}) : "
+                        "couverture du bootstrap percentile non garantie")
+    return ConfidenceInterval(estimate, float(lower), float(upper), None, tuple(warnings))
+
+
+def bootstrap_metrics(data: AlignedData, version: str, *, n_resamples: int,
+                      confidence_level: float, seed: int) -> BootstrapResult:
+    """Intervalles de confiance de toutes les métriques d'une version."""
+    if version not in data.y_pred:
+        raise KeyError(f"Version inconnue : {version!r} (disponibles : {list(data.y_pred)}).")
+    settings, members = bootstrap_settings(data, n_resamples, confidence_level, seed)
+    y_true, y_pred, scores = data.y_true, data.y_pred[version], data.scores[version]
+
+    def statistic(idx):
+        return compute_metrics(data.classes, y_true[idx], y_pred[idx],
+                               scores[idx] if scores is not None else None)
+
+    return BootstrapResult(version, settings, run_bootstrap(data, settings, members, statistic))

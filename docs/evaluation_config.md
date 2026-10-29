@@ -1,8 +1,13 @@
 # Configuration d'évaluation, critères d'acceptation et métadonnées — v0.1
 
-Statut : **défini en Phase 0.** La lecture/validation de la configuration arrive en
-Phase 1 (classes, statistiques), le moteur de décision en Phase 2, les métadonnées dans
-le rapport en Phase 3.
+Statut : défini en Phase 0. Lecture/validation (`src/medvision_qa/config.py`) et moteur de
+décision (`src/medvision_qa/decision_engine.py`) **implémentés en Phase 2**. L'affichage
+des métadonnées dans le rapport arrive en Phase 3. L'exemple ci-dessous est chargé tel
+quel par `tests/test_config.py`.
+
+Chemins de fichiers : **relatifs au dossier du fichier de configuration**, sans en sortir.
+Les chemins absolus et `..` sont refusés (protection contre la traversée de
+répertoires). Le fichier doit exister.
 
 Format : **TOML** (lisible, commentable, lu par `tomllib` de la bibliothèque standard,
 sans dépendance). Clé inconnue → erreur, afin qu'une faute de frappe ne désactive pas
@@ -124,8 +129,9 @@ Toutes les décisions reposent sur l'**intervalle de confiance bilatéral** au n
 `confidence_level` (bootstrap, Phase 1/2), jamais sur la seule estimation ponctuelle.
 Notation : `[L, U]` = bornes de l'IC.
 
-**`absolute`** — la métrique de la version B (ou de la seule version évaluée) contre un
-seuil fixé :
+**`absolute`** — la métrique d'une version contre un seuil `threshold` ∈ [0, 1]. Clé
+optionnelle `version = "A"` ou `"B"`. Par défaut : B si elle est déclarée, sinon A. La
+version retenue est affichée dans le résultat.
 
 | Condition | État |
 |---|---|
@@ -154,7 +160,10 @@ absence de différence significative n'entraîne **jamais** `SATISFIED`.
 
 **Dans tous les cas**, le critère est `INCONCLUSIVE`, avec la raison, si la métrique est
 indéfinie (par exemple, une classe absente), si les données requises manquent (pas de
-scores pour l'AUROC), ou si l'IC n'est pas calculable.
+scores pour l'AUROC), si l'IC n'est pas calculable, ou si l'IC est **de largeur nulle**
+(voir [comparison.md § 3](comparison.md#3-moteur-de-décision)).
+
+Les critères `non_inferiority` et `superiority` exigent `[versions.B]`. `margin` ∈ ]0, 1[.
 
 ### Agrégation globale
 
