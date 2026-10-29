@@ -78,10 +78,14 @@ excluded, since by construction they are degradations of the same images.
 |---|---|
 | Groups of **byte-identical** files | 300 (695 pairs) |
 | **Training ↔ Testing** identical pairs | 365 |
-| **Testing images with an identical copy in Training** | **216 / 1,311 (16.5%)**: meningioma 106, no-tumor 105, pituitary 5 (recounted independently on 2026-10-29) |
+| **Testing images with an identical copy in Training** | **216 / 1,311 (16.5%)**: meningioma 106, no-tumor 105, pituitary 5 |
 | Identical duplicates with different labels | 0 |
 | Near-duplicates (pHash ≤ 4) with different labels | 50; **24 inspected**: all show different images, hence false positives (the other 26 were not inspected) |
 | MRI-BT images close to a figshare image (pHash ≤ 4) | 1,704 (mostly Training meningioma and pituitary), labels agree in 98% of the pairs |
+
+The exact-duplicate rows come from the `exact_file_*` and
+`testing_images_with_identical_copy_in_training` fields of `summary.json`, and were
+recounted with a separate script on 2026-10-29 (same values).
 
 **What can be stated.** 16.5% of the MRI-BT test images are exact copies of training
 images. An evaluation on this Training/Testing split is therefore not independent for
@@ -171,3 +175,11 @@ hash, criterion and threshold is unchanged; the original French files remain in 
 history (commit `3a387f5` and earlier). The reports were regenerated from the translated
 configuration, which is why their configuration hash differs from the one of commit
 `6de2a12`.
+
+**Audit of 2026-10-29.** `summary.json` used to count the identical pairs of a group from
+its first file only (263 Training ↔ Testing pairs), while this README gave every pair
+(365) and the number of Testing images with a copy in Training (216), which the file did
+not contain. `audit_mri_bt.py` now writes these counts, and `summary.json` was
+regenerated: the other fields and `flagged_pairs.csv` are unchanged. The reports were
+regenerated after a wording change in the report's McNemar note; every number is
+unchanged.

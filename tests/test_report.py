@@ -88,6 +88,10 @@ def test_cannot_establish_minimum_text(html):
         assert str(escape(str(sentence))) in section
 
 
+def test_p_value_is_not_presented_as_importance(html):
+    assert "a low p-value does not measure the practical or clinical importance" in html
+
+
 def test_standalone_no_external_resources(html):
     assert "<script" not in html.lower()
     assert not re.search(r'(src|href)\s*=\s*"(?!#)', html)  # internal anchor links only
@@ -206,6 +210,14 @@ def test_cli_invalid_data_produces_no_report(make_eval, tmp_path, capsys):
     assert main([str(config), "-o", str(out)]) == 2
     assert not out.exists()
     assert "no report produced" in capsys.readouterr().err
+
+
+def test_cli_missing_config_is_a_clean_error(tmp_path, capsys):
+    out = tmp_path / "report.html"
+    assert main([str(tmp_path / "missing.toml"), "-o", str(out)]) == 2
+    assert not out.exists()
+    err = capsys.readouterr().err
+    assert "Invalid configuration" in err and "Traceback" not in err
 
 
 def test_demo_data_regenerates_identically(tmp_path):

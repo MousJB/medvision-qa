@@ -153,3 +153,8 @@ def test_binary_metric_requires_positive_classes(make_config):
 def test_invalid_toml_rejected(make_config):
     with pytest.raises(ConfigError, match="Unreadable configuration"):
         load_config(make_config("schema_version = \n"))
+
+
+def test_missing_config_file_rejected(tmp_path):
+    with pytest.raises(ConfigError, match=r"Unreadable configuration \(missing\.toml\)"):
+        load_config(tmp_path / "missing.toml")

@@ -20,10 +20,21 @@
   },
   "exact_file_duplicate_groups": 300,
   "exact_pixel_duplicate_groups": 300,
-  "exact_pixel_duplicate_pairs_by_location": {
-    "within Testing": 30,
-    "Testing ↔ Training": 263,
-    "within Training": 133
+  "exact_file_duplicate_pairs_total": 695,
+  "exact_file_duplicate_pairs_by_location": {
+    "Testing ↔ Training": 365,
+    "within Testing": 44,
+    "within Training": 286
+  },
+  "exact_file_duplicate_groups_with_different_labels": 0,
+  "testing_images_with_identical_copy_in_training": {
+    "count": 216,
+    "of_testing_images": 1311,
+    "by_label": {
+      "meningioma": 106,
+      "no-tumor": 105,
+      "pituitary": 5
+    }
   },
   "near_duplicate_threshold": 4,
   "near_duplicate_pairs_total": 6450,

@@ -40,7 +40,7 @@
 <header>
   <p class="muted">Version Verification Record · MedVision QA 0.0.1</p>
   <h1>figshare MRI (3 classes) — SimpleCNN (A) vs ResNet18 (B)</h1>
-  <p class="muted">Run <code>56c79e0a-8be7-446a-a652-39d6d6fe1fb6</code> · 2026-10-29T10:01:40+00:00</p>
+  <p class="muted">Run <code>517ec73e-dbd7-4d96-af53-687b4fc34d99</code> · 2026-10-29T10:21:48+00:00</p>
   <div class="banner disclaimer">Technical evaluation document. It is not a clinical validation, a certification or proof of regulatory compliance. See section 21.</div>
   <div class="decision">
     <strong>Overall decision:</strong> <span class="state INCONCLUSIVE">INCONCLUSIVE</span> — inconclusive criterion(s): [&#39;C2&#39;]
@@ -53,12 +53,12 @@
 
 <h2 id="s1">1. Report and run identifiers</h2>
 <dl>
-  <dt>Run identifier</dt><dd><code>56c79e0a-8be7-446a-a652-39d6d6fe1fb6</code> (also identifies this report)</dd>
+  <dt>Run identifier</dt><dd><code>517ec73e-dbd7-4d96-af53-687b4fc34d99</code> (also identifies this report)</dd>
   <dt>Configuration</dt><dd><code>config.toml</code> — SHA-256 <code>ab75e1e634a10a609d13a4b960b0798e4912f855f61d29f1800663a351bc7192</code></dd>
 </dl>
 
 <h2 id="s2">2. Evaluation date and time</h2>
-<p>2026-10-29T10:01:40+00:00 (UTC, start of the run)</p>
+<p>2026-10-29T10:21:48+00:00 (UTC, start of the run)</p>
 
 <h2 id="s3">3. Objective and description of the comparison</h2>
 <dl>
@@ -208,7 +208,7 @@
   <dt>Pairs</dt><dd>both correct: 599 · only A correct: 22 · only B correct: 121 · both wrong: 34</dd>
   <dt>p-value</dt><dd>not applicable — several cases per patient: the pairs are not independent, so the McNemar test assumption does not hold</dd>
 </dl>
-<p class="note">Assumption: independent pairs. A high p-value proves neither equivalence nor the absence of regression.</p>
+<p class="note">Assumption: independent pairs. A high p-value proves neither equivalence nor the absence of regression, and a low p-value does not measure the practical or clinical importance of the difference.</p>
 <h3>DeLong</h3>
 <p>not implemented: no independent reference (R/pROC) available to validate it; the AUROC difference is estimated by paired bootstrap</p>
 

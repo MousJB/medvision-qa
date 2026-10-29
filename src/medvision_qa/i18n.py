@@ -366,8 +366,10 @@ MESSAGES = {
     "r.p_value": ("p-value", "p 値"),
     "r.not_applicable": ("not applicable", "適用不可"),
     "r.mcnemar_note": ("Assumption: independent pairs. A high p-value proves neither equivalence nor the "
-                       "absence of regression.",
-                       "前提: ペアが互いに独立であること。p 値が大きくても、同等性や性能低下がないことの証明にはならない。"),
+                       "absence of regression, and a low p-value does not measure the practical or clinical "
+                       "importance of the difference.",
+                       "前提: ペアが互いに独立であること。p 値が大きくても、同等性や性能低下がないことの証明にはならず、"
+                       "p 値が小さくても、差の実用上・臨床上の重要性を示すものではない。"),
     "r.delong": ("DeLong", "DeLong 法"),
     "r.tests_not_run": ("Not run: a single version is declared.", "未実施: 宣言されたバージョンが 1 つのみ。"),
     "r.id": ("Id", "ID"),

@@ -80,6 +80,58 @@ write_report(result, "report.ja.html", lang="ja")
 Invalid input raises `ValidationError`, whose `.issues` lists every violation (file, line,
 column, value, rule). An invalid configuration raises `ConfigError`.
 
+### Example input and output
+
+Input: one ground truth file and one predictions file per version, joined on `case_id`
+(never on row order). Full rules: [docs/data_format.md](docs/data_format.md).
+
+```text
+ground_truth.csv                     preds_v2.csv
+case_id,true_label,patient_id        case_id,predicted_label,score_glioma,score_meningioma,score_notumor,score_pituitary
+img_00000,meningioma,P0000           img_00000,pituitary,0.077062,0.382078,0.050313,0.490547
+img_00001,glioma,P0001               img_00001,notumor,0.253126,0.177946,0.346870,0.222058
+```
+
+Output on valid data: the decision on the console, and the HTML report.
+
+```text
+$ python -m medvision_qa examples/synthetic_demo/config.toml -o reports/demo.html
+SATISFIED — all 3 criteria are satisfied
+Report: reports/demo.html
+```
+
+Output on invalid data (here a duplicated `case_id` and a score of 1.2): exit code 2, no report.
+
+```text
+Invalid data, no report produced.
+2 validation issue(s):
+  - [unique_case_id] preds_v2.csv, line 4, column 'case_id': case_id already present on line 2 (value: 'img_00000')
+  - [score_in_bounds] preds_v2.csv, line 3, column 'score_glioma': score outside [0, 1] (value: '1.2')
+```
+
+The reports are self-contained HTML files (no script, no external resource). GitHub shows
+their source code: download them and open them in a browser to read them.
+
+## Architecture
+
+```text
+config.toml ─► config.py            strict TOML reading: classes, versions, statistics, criteria
+CSV files   ─► validation.py        every violation collected, no row dropped or corrected
+               alignment.py         join on case_id; missing or extra cases are errors
+               metrics.py           confusion matrix, per-class and binary metrics, AUROC
+               confidence_intervals.py   percentile bootstrap, by patient when patient_id is given
+               comparison.py        paired bootstrap of B − A, exact McNemar (when applicable)
+               decision_engine.py   SATISFIED / NOT_SATISFIED / INCONCLUSIVE from CI bounds only
+               evaluation.py        runs the steps above, records run id, date, package versions
+               report.py + templates/   Version Verification Record (HTML, English or Japanese)
+               web.py + history.py  local FastAPI interface, SQLite history
+               duplicates.py        exact (SHA-256) and near (pHash) duplicate detection
+```
+
+Core dependencies: numpy, scipy, Jinja2, and scikit-learn (not used by the metric code:
+the tests use it as an independent reference, and the report records its version). The web
+interface adds FastAPI, uvicorn and python-multipart.
+
 ## Documentation
 
 - [MEDVISION_QA.md](MEDVISION_QA.md): full specification
@@ -91,12 +143,13 @@ column, value, rule). An invalid configuration raises `ConfigError`.
 - [docs/web.md](docs/web.md): web interface, local storage, security measures
 - [docs/phase0_inspection.md](docs/phase0_inspection.md): inspection of the environment, the MRI repository and the dataset
 - [docs/phase4_data_sources.md](docs/phase4_data_sources.md): data sources and licences
+- [docs/audit.md](docs/audit.md): audit of 2026-10-29: commands run, independent checks, findings, what remains unverified, demo script
 
 Every document has a Japanese version in [docs/ja/](docs/ja/).
 
 ## Installation (development)
 
-Python ≥ 3.11.
+Python ≥ 3.11 (tested with Python 3.12.6 on Windows 10 only).
 
 ```bash
 python -m venv .venv

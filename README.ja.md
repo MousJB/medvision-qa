@@ -78,6 +78,58 @@ write_report(result, "report.ja.html", lang="ja")
 値、規則）が含まれます。各違反は `issue.render("ja")` で日本語にできます。設定ファイルが不正な
 場合は `ConfigError` が発生し、`exc.text.render("ja")` で日本語のメッセージを得られます。
 
+### 入力と出力の例
+
+入力: 正解ファイル 1 つと、バージョンごとの予測ファイル 1 つ。`case_id` で結合します（行の順番では
+結合しません）。規則の詳細: [docs/ja/data_format.md](docs/ja/data_format.md)。
+
+```text
+ground_truth.csv                     preds_v2.csv
+case_id,true_label,patient_id        case_id,predicted_label,score_glioma,score_meningioma,score_notumor,score_pituitary
+img_00000,meningioma,P0000           img_00000,pituitary,0.077062,0.382078,0.050313,0.490547
+img_00001,glioma,P0001               img_00001,notumor,0.253126,0.177946,0.346870,0.222058
+```
+
+データが正しい場合の出力: コンソールに判定、そして HTML レポート（コンソール出力は英語）。
+
+```text
+$ python -m medvision_qa examples/synthetic_demo/config.toml -o reports/demo.html
+SATISFIED — all 3 criteria are satisfied
+Report: reports/demo.html
+```
+
+データが不正な場合の出力（ここでは `case_id` の重複と 1.2 のスコア）: 終了コード 2、レポートは作成されません。
+
+```text
+Invalid data, no report produced.
+2 validation issue(s):
+  - [unique_case_id] preds_v2.csv, line 4, column 'case_id': case_id already present on line 2 (value: 'img_00000')
+  - [score_in_bounds] preds_v2.csv, line 3, column 'score_glioma': score outside [0, 1] (value: '1.2')
+```
+
+レポートは自己完結型の HTML ファイルです（スクリプトも外部リソースもなし）。GitHub ではソース
+コードとして表示されるため、ダウンロードしてブラウザーで開いてください。
+
+## アーキテクチャ
+
+```text
+config.toml ─► config.py            TOML の厳密な読み込み: クラス、バージョン、統計設定、基準
+CSV ファイル ─► validation.py        すべての違反を収集し、行の削除や修正はしない
+               alignment.py         case_id で結合。欠けている症例や余分な症例はエラー
+               metrics.py           混同行列、クラス別・二値タスクの指標、AUROC
+               confidence_intervals.py   パーセンタイル・ブートストラップ（patient_id があれば患者単位）
+               comparison.py        B − A のペア・ブートストラップ、正確マクネマー検定（適用可能な場合）
+               decision_engine.py   信頼区間の境界のみから SATISFIED / NOT_SATISFIED / INCONCLUSIVE
+               evaluation.py        上記の手順を実行し、実行 ID、日時、パッケージのバージョンを記録
+               report.py + templates/   Version Verification Record（HTML、英語または日本語）
+               web.py + history.py  ローカル FastAPI インターフェース、SQLite 履歴
+               duplicates.py        完全重複（SHA-256）と準重複（pHash）の検出
+```
+
+主な依存関係: numpy、scipy、Jinja2、scikit-learn（指標の計算コードでは使わず、テストで独立した
+参照実装として使い、レポートにそのバージョンを記録する）。Web インターフェースには FastAPI、
+uvicorn、python-multipart が加わります。
+
 ## ドキュメント
 
 - [MEDVISION_QA.ja.md](MEDVISION_QA.ja.md): 仕様書の全文
@@ -89,10 +141,11 @@ write_report(result, "report.ja.html", lang="ja")
 - [docs/ja/web.md](docs/ja/web.md): Web インターフェース、ローカルの保存先、セキュリティ対策
 - [docs/ja/phase0_inspection.md](docs/ja/phase0_inspection.md): 環境、MRI リポジトリ、データセットの調査
 - [docs/ja/phase4_data_sources.md](docs/ja/phase4_data_sources.md): データソースとライセンス
+- [docs/ja/audit.md](docs/ja/audit.md): 2026-10-29 の監査: 実行したコマンド、独立した検証、所見、未検証の事項、デモの手順
 
 ## インストール（開発用）
 
-Python 3.11 以上。
+Python 3.11 以上（テスト済みの環境は Windows 10 上の Python 3.12.6 のみ）。
 
 ```bash
 python -m venv .venv

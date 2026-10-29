@@ -16,6 +16,7 @@ import csv
 import hashlib
 import json
 from collections import Counter
+from itertools import combinations
 from pathlib import Path
 
 import kagglehub
@@ -67,10 +68,10 @@ def main():
     base = Path(kagglehub.dataset_download(DATASET))
     files = sorted(p for p in base.rglob("*")
                    if p.suffix.lower() in IMAGE_SUFFIXES and ORIGINAL_SUBTREE in p.relative_to(base).parts)
-    print(f"{len(files)} images sous {base}")
+    print(f"{len(files)} images under {base}")
     items = [describe(p, base) for p in files]
     groups = Counter(f'{it["subset"]}/{it["label"]}' for it in items)
-    print("sous-ensembles :", dict(sorted(groups.items())))
+    print("subsets:", dict(sorted(groups.items())))
 
     subsets = sorted({it["subset"] for it in items})
     hashes = [it["phash"] for it in items]
@@ -84,8 +85,11 @@ def main():
 
     pair_kinds = Counter(kind(i, j) for i, j, _ in near)
     label_conflicts = [(i, j, d) for i, j, d in near if items[i]["label"] != items[j]["label"]]
-    exact_pairs = [(g[0], other, 0) for g in exact_pixels for other in g[1:]]
-    exact_kinds = Counter(kind(i, j) for i, j, _ in exact_pairs)
+    # Every pair within a group of byte-identical files: a group of n files gives n(n-1)/2 pairs.
+    exact_pairs = [(i, j) for g in exact_file for i, j in combinations(g, 2)]
+    exact_kinds = Counter(kind(i, j) for i, j in exact_pairs)
+    testing_copied = sorted({i for g in exact_file for i in g if items[i]["subset"] == "Testing"
+                             and any(items[j]["subset"] == "Training" for j in g)})
 
     OUT.mkdir(exist_ok=True)
     with (OUT / "flagged_pairs.csv").open("w", newline="", encoding="utf-8") as f:
@@ -120,7 +124,15 @@ def main():
         "image_sizes": dict(Counter(it["size"] for it in items).most_common(10)),
         "exact_file_duplicate_groups": len(exact_file),
         "exact_pixel_duplicate_groups": len(exact_pixels),
-        "exact_pixel_duplicate_pairs_by_location": dict(exact_kinds),
+        "exact_file_duplicate_pairs_total": len(exact_pairs),
+        "exact_file_duplicate_pairs_by_location": dict(sorted(exact_kinds.items())),
+        "exact_file_duplicate_groups_with_different_labels": sum(
+            len({items[i]["label"] for i in g}) > 1 for g in exact_file),
+        "testing_images_with_identical_copy_in_training": {
+            "count": len(testing_copied),
+            "of_testing_images": sum(it["subset"] == "Testing" for it in items),
+            "by_label": dict(sorted(Counter(items[i]["label"] for i in testing_copied).items())),
+        },
         "near_duplicate_threshold": THRESHOLD,
         "near_duplicate_pairs_total": len(near),
         "near_duplicate_pairs_by_location": dict(pair_kinds),
@@ -129,7 +141,7 @@ def main():
     }
     (OUT / "summary.json").write_text(json.dumps(audit, indent=2, ensure_ascii=False) + "\n",
                                       encoding="utf-8", newline="\n")
-    print(json.dumps(audit, indent=2, ensure_ascii=False))
+    print(json.dumps(audit, indent=2))  # ASCII: the Windows console may not encode "↔"
 
 
 if __name__ == "__main__":

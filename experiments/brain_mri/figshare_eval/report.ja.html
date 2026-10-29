@@ -40,7 +40,7 @@
 <header>
   <p class="muted">Version Verification Record（バージョン検証記録） · MedVision QA 0.0.1</p>
   <h1>figshare MRI（3 クラス）— SimpleCNN（A）対 ResNet18（B）</h1>
-  <p class="muted">実行 ID <code>7b55cf5b-1d40-4a8e-aeed-a7f3f2848739</code> · 2026-10-29T10:01:47+00:00</p>
+  <p class="muted">実行 ID <code>b1dd79af-82a3-45af-b80c-48ef5fe17b53</code> · 2026-10-29T10:21:53+00:00</p>
   <div class="banner disclaimer">技術評価のための文書である。臨床的妥当性確認、認証、規制適合の証明のいずれでもない。第 21 節を参照。</div>
   <div class="decision">
     <strong>総合判定:</strong> <span class="state INCONCLUSIVE">INCONCLUSIVE（判定保留）</span> — 判定保留の基準: [&#39;C2&#39;]
@@ -53,12 +53,12 @@
 
 <h2 id="s1">1. レポートおよび実行の識別子</h2>
 <dl>
-  <dt>実行 ID</dt><dd><code>7b55cf5b-1d40-4a8e-aeed-a7f3f2848739</code> （本レポートの識別子を兼ねる）</dd>
+  <dt>実行 ID</dt><dd><code>b1dd79af-82a3-45af-b80c-48ef5fe17b53</code> （本レポートの識別子を兼ねる）</dd>
   <dt>設定ファイル</dt><dd><code>config.ja.toml</code> — SHA-256 <code>4c8981af5dac814ec14a1cf30dd2c34241b5e5e4ec0c01affe64d60d3e42f909</code></dd>
 </dl>
 
 <h2 id="s2">2. 評価日時</h2>
-<p>2026-10-29T10:01:47+00:00 （UTC、実行開始時刻）</p>
+<p>2026-10-29T10:21:53+00:00 （UTC、実行開始時刻）</p>
 
 <h2 id="s3">3. 目的と比較の概要</h2>
 <dl>
@@ -208,7 +208,7 @@
   <dt>ペア</dt><dd>両方正解: 599 · A のみ正解: 22 · B のみ正解: 121 · 両方不正解: 34</dd>
   <dt>p 値</dt><dd>適用不可 — 患者あたり複数の症例があるためペアが独立ではなく、マクネマー検定の前提を満たさない</dd>
 </dl>
-<p class="note">前提: ペアが互いに独立であること。p 値が大きくても、同等性や性能低下がないことの証明にはならない。</p>
+<p class="note">前提: ペアが互いに独立であること。p 値が大きくても、同等性や性能低下がないことの証明にはならず、p 値が小さくても、差の実用上・臨床上の重要性を示すものではない。</p>
 <h3>DeLong 法</h3>
 <p>未実装。検証に使える独立した参照実装（R/pROC）がないため。AUROC の差は対応のあるブートストラップで推定している</p>
 

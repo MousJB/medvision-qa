@@ -36,7 +36,8 @@ For each metric of [metrics.md](metrics.md), Δ = B − A (positive = B better).
   - several cases belong to the same patient: the pairs are not independent;
   - no pair is discordant (b + c = 0).
 - McNemar is **not used in decisions**: those rest on the CIs (§ 3). A high p-value
-  proves neither equivalence nor the absence of regression.
+  proves neither equivalence nor the absence of regression, and a low p-value does not
+  measure the practical or clinical importance of the difference.
 
 ## 3. Decision engine
 

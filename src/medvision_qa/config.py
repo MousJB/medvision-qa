@@ -264,7 +264,10 @@ def _criteria(raw: dict, classes: ClassSpec, versions: dict) -> tuple[Criterion,
 
 def load_config(path) -> EvaluationConfig:
     path = Path(path).resolve()
-    raw_bytes = path.read_bytes()
+    try:
+        raw_bytes = path.read_bytes()
+    except OSError as exc:
+        raise ConfigError(msg("cfg.unreadable", name=path.name, error=exc.strerror or str(exc))) from exc
     try:
         raw = tomllib.loads(raw_bytes.decode("utf-8-sig"))
     except (UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
