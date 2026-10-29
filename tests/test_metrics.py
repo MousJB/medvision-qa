@@ -1,10 +1,11 @@
-"""Métriques : valeurs calculées à la main, puis comparées à scikit-learn (référence indépendante)."""
+"""Metrics: values computed by hand, then compared with scikit-learn (independent reference)."""
 
 import numpy as np
 import pytest
 from sklearn import metrics as skm
 
 from medvision_qa.classes import ClassSpec
+from medvision_qa.i18n import raw
 from medvision_qa.metrics import (DEFINITIONS, MetricValue, auroc, compute_metrics,
                                   confusion_matrix, metric_keys)
 
@@ -12,7 +13,7 @@ ABC = ClassSpec(("a", "b", "c"))
 
 
 def test_hand_computed_example():
-    # vérité : a a a b b c ; prédiction : a a b b c c
+    # truth: a a a b b c; prediction: a a b b c c
     y_true = np.array([0, 0, 0, 1, 1, 2])
     y_pred = np.array([0, 0, 1, 1, 2, 2])
     cm = confusion_matrix(y_true, y_pred, 3)
@@ -67,9 +68,9 @@ def test_matches_sklearn_on_random_data(seed):
 def test_class_never_predicted_precision_undefined_not_zero():
     m = compute_metrics(ABC, np.array([0, 1, 2]), np.array([0, 1, 1]), None)
     assert not m["precision[c]"].defined
-    assert "jamais prédite" in m["precision[c]"].undefined_reason
+    assert m["precision[c]"].undefined_reason.key == "metric.never_predicted"
     assert m["recall[c]"].value == 0.0
-    assert m["f1[c]"].value == 0.0  # 2TP/(2TP+FP+FN) = 0/1 : défini
+    assert m["f1[c]"].value == 0.0  # 2TP/(2TP+FP+FN) = 0/1: defined
 
 
 def test_class_absent_everywhere_makes_macro_f1_undefined():
@@ -77,19 +78,19 @@ def test_class_absent_everywhere_makes_macro_f1_undefined():
     assert not m["recall[c]"].defined
     assert not m["f1[c]"].defined
     assert not m["macro_f1"].defined
-    assert "['c']" in m["macro_f1"].undefined_reason
+    assert "['c']" in str(m["macro_f1"].undefined_reason)
 
 
 def test_binary_metrics_undefined_without_positive_class():
     m = compute_metrics(ABC, np.array([0, 1, 2]), np.array([0, 1, 2]), np.full((3, 3), 1 / 3))
     for key in ("sensitivity", "specificity", "auroc"):
-        assert m[key].undefined_reason == "aucune classe positive déclarée"
+        assert str(m[key].undefined_reason) == "no positive class declared"
 
 
 def test_auroc_undefined_without_scores():
     spec = ClassSpec(("a", "b", "c"), ("a",))
     m = compute_metrics(spec, np.array([0, 1, 2]), np.array([0, 1, 2]), None)
-    assert m["auroc"].undefined_reason == "scores non fournis"
+    assert str(m["auroc"].undefined_reason) == "scores not provided"
     assert m["sensitivity"].value == 1.0
 
 
@@ -102,7 +103,7 @@ def test_sensitivity_undefined_without_positive_cases():
 
 
 def test_auroc_hand_computed_with_ties():
-    # positifs : 0.8, 0.5 ; négatifs : 0.5, 0.2 → paires : (0.8>0.5)(0.8>0.2)(0.5=0.5)(0.5>0.2) = 3.5/4
+    # positives: 0.8, 0.5; negatives: 0.5, 0.2 → pairs: (0.8>0.5)(0.8>0.2)(0.5=0.5)(0.5>0.2) = 3.5/4
     y = np.array([True, True, False, False])
     s = np.array([0.8, 0.5, 0.5, 0.2])
     assert auroc(y, s).value == pytest.approx(0.875)
@@ -112,4 +113,4 @@ def test_metric_value_invariant():
     with pytest.raises(ValueError):
         MetricValue(None, None)
     with pytest.raises(ValueError):
-        MetricValue(0.5, "raison")
+        MetricValue(0.5, raw("reason"))

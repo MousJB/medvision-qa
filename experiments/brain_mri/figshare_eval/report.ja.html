@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Version Verification Record（バージョン検証記録） — figshare MRI（3 クラス）— SimpleCNN（A）対 ResNet18（B）</title>
+<style>
+  :root { --fg:#1d232a; --muted:#5b6672; --line:#d5dbe1; --bg-alt:#f4f6f8;
+          --ok:#1f6f3f; --ok-bg:#e4f3ea; --ko:#a32222; --ko-bg:#fbe7e7; --inc:#8a5a00; --inc-bg:#fdf1d8; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+         color: var(--fg); max-width: 1100px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.15rem; margin: 32px 0 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+  h3 { font-size: 1rem; margin: 16px 0 6px; }
+  .muted, .note { color: var(--muted); }
+  .note { font-size: .85rem; }
+  code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; word-break: break-all; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: .9rem; }
+  th, td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+  th { background: var(--bg-alt); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .state { display: inline-block; padding: 1px 8px; border-radius: 4px; font-weight: 700; font-size: .85rem; }
+  .SATISFIED { color: var(--ok); background: var(--ok-bg); }
+  .NOT_SATISFIED { color: var(--ko); background: var(--ko-bg); }
+  .INCONCLUSIVE { color: var(--inc); background: var(--inc-bg); }
+  .banner { border: 1px solid var(--line); border-left: 5px solid var(--inc); background: var(--inc-bg);
+            padding: 8px 12px; margin: 12px 0; }
+  .disclaimer { border-left-color: var(--muted); background: var(--bg-alt); }
+  .decision { border: 1px solid var(--line); padding: 12px 16px; margin: 16px 0; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0; }
+  dt { font-weight: 600; } dd { margin: 0; }
+  nav ol { columns: 2; font-size: .9rem; }
+  .not-provided { color: var(--muted); font-style: italic; }
+  @media print { nav { display: none; } h2 { break-after: avoid; } table { break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="muted">Version Verification Record（バージョン検証記録） · MedVision QA 0.0.1</p>
+  <h1>figshare MRI（3 クラス）— SimpleCNN（A）対 ResNet18（B）</h1>
+  <p class="muted">実行 ID <code>7b55cf5b-1d40-4a8e-aeed-a7f3f2848739</code> · 2026-10-29T10:01:47+00:00</p>
+  <div class="banner disclaimer">技術評価のための文書である。臨床的妥当性確認、認証、規制適合の証明のいずれでもない。第 21 節を参照。</div>
+  <div class="decision">
+    <strong>総合判定:</strong> <span class="state INCONCLUSIVE">INCONCLUSIVE（判定保留）</span> — 判定保留の基準: [&#39;C2&#39;]
+    <div class="note">集約規則: NOT_SATISFIED の基準が 1 つでもあれば NOT_SATISFIED。そうでなく、INCONCLUSIVE の基準が 1 つでもあれば INCONCLUSIVE。すべての基準が SATISFIED の場合に限り SATISFIED。</div>
+  </div>
+</header>
+
+<nav><ol>
+<li><a href="#s1">レポートおよび実行の識別子</a></li><li><a href="#s2">評価日時</a></li><li><a href="#s3">目的と比較の概要</a></li><li><a href="#s4">比較対象バージョンの識別子</a></li><li><a href="#s5">コード、コミット、重み、ハッシュ</a></li><li><a href="#s6">データセットのマニフェスト</a></li><li><a href="#s7">ファイルの来歴</a></li><li><a href="#s8">前処理、設定、依存パッケージ、乱数シード</a></li><li><a href="#s9">クラスとクラスの順序</a></li><li><a href="#s10">データ検証の概要</a></li><li><a href="#s11">指標と定義</a></li><li><a href="#s12">混同行列</a></li><li><a href="#s13">信頼区間とパラメーター</a></li><li><a href="#s14">統計的検定、前提、限界</a></li><li><a href="#s15">分析前に定めた受入基準</a></li><li><a href="#s16">各基準の状態と総合判定</a></li><li><a href="#s17">サンプルサイズの根拠</a></li><li><a href="#s18">頑健性試験の結果</a></li><li><a href="#s19">利用できない項目・実施していない項目</a></li><li><a href="#s20">分析の限界</a></li><li><a href="#s21">What This Report Cannot Establish（本レポートで立証できないこと）</a></li></ol></nav>
+
+<h2 id="s1">1. レポートおよび実行の識別子</h2>
+<dl>
+  <dt>実行 ID</dt><dd><code>7b55cf5b-1d40-4a8e-aeed-a7f3f2848739</code> （本レポートの識別子を兼ねる）</dd>
+  <dt>設定ファイル</dt><dd><code>config.ja.toml</code> — SHA-256 <code>4c8981af5dac814ec14a1cf30dd2c34241b5e5e4ec0c01affe64d60d3e42f909</code></dd>
+</dl>
+
+<h2 id="s2">2. 評価日時</h2>
+<p>2026-10-29T10:01:47+00:00 （UTC、実行開始時刻）</p>
+
+<h2 id="s3">3. 目的と比較の概要</h2>
+<dl>
+  <dt>タイトル</dt><dd>figshare MRI（3 クラス）— SimpleCNN（A）対 ResNet18（B）</dd>
+  <dt>目的</dt><dd>患者単位で分離したテストセットにおいて、ResNet18 のマクロ F1 が SimpleCNN に劣らないこと、神経膠腫の感度が 0.90 に達することを確認し、神経膠腫対その他の AUROC の優越性を検定する。</dd>
+  <dt>種別</dt><dd>対応のある比較: 同一の 776 症例で B（候補）を A（基準）と比較</dd>
+</dl>
+
+<h2 id="s4">4. 比較対象バージョンの識別子</h2>
+<table>
+  <tr><th>役割</th><th>識別子</th><th>説明</th><th>スコアの有無</th></tr>
+  <tr><td>A — 基準</td><td><code>simplecnn-figshare-v1</code></td>
+      <td>SimpleCNN（畳み込み + BN ブロック 3 つ、dropout 0.5）。brain-tumor-mri-classification リポジトリのアーキテクチャをゼロから学習</td><td>あり</td></tr>
+  <tr><td>B — 候補</td><td><code>resnet18-figshare-v1</code></td>
+      <td>ImageNet で事前学習した ResNet18（torchvision）。全層を再学習</td><td>あり</td></tr>
+</table>
+
+<h2 id="s5">5. コード、コミット、重み、ハッシュ</h2>
+<table>
+  <tr><th>バージョン</th><th>コードのコミット</th><th>重みの SHA-256</th></tr>
+  <tr><td>A</td><td class="mono">2bcfb779e281476e4f74470fd5cd3688ef2f279e</td><td class="mono">7b17a4a31fcbbb3eec1327c28994cfcc62e5cab45ba3bcadf34690f10f5127d2</td></tr>
+  <tr><td>B</td><td class="mono">2bcfb779e281476e4f74470fd5cd3688ef2f279e</td><td class="mono">a8901dd2c84608fd77c0d902b467b8675a01b06a76e4c8a967e422fd225d73f5</td></tr>
+</table>
+<p class="note">設定ファイルで申告された値であり、本ツールでは検証していない（重みファイルは読み込まない）。</p>
+
+<h2 id="s6">6. データセットのマニフェスト</h2>
+<dl>
+  <dt>説明</dt><dd>figshare brain tumor dataset v8（DOI 10.6084/m9.figshare.1512427.v8）、造影 T1 強調画像 3,064 スライス。233 個の PID を 209 患者に統合した（語幹が同じ MR&lt;番号&gt;&lt;英字&gt; 形式の PID を同一患者とみなす。README.md を参照）。テストセットはクラスごとに抽出した患者の 30%（乱数シード 20261029）で、学習用・検証用と共通する患者はいない。</dd>
+  <dt>データの種類</dt><dd>実臨床データ（利用者による申告）</dd>
+  <dt>マニフェストの SHA-256</dt><dd class="mono">19bd2870d659c7c1035c390d75700599b3832d3b04e5f4e13e2d24a8e93cba1d</dd>
+</dl>
+
+<h2 id="s7">7. ファイルの来歴</h2>
+<table>
+  <tr><th>役割</th><th>ファイル（設定ファイルからの相対パス）</th><th>SHA-256（計算値）</th><th>行数</th></tr>
+  <tr><td>正解データ</td><td><code>ground_truth.csv</code></td><td class="mono">01260a5bfa6388d3af5c1654352c5e227b0e5761a1cb868ec06b41fad6c51b1a</td><td class="num">776</td></tr>
+  <tr><td>予測（バージョン A）</td><td><code>preds_simplecnn.csv</code></td><td class="mono">b62960bfe7efb0981f9265781c4538db9f95281688f205fd1fb509d3b9112585</td><td class="num">776</td></tr>
+  <tr><td>予測（バージョン B）</td><td><code>preds_resnet18.csv</code></td><td class="mono">217e5bb61c8e30485043cb71e83205ba3e70e6c7ff9067151a2e7ad3ccd62204</td><td class="num">776</td></tr>
+</table>
+<p class="note">未提供の項目は第 19 節にまとめている。</p>
+
+<h2 id="s8">8. 前処理、設定、依存パッケージ、乱数シード</h2>
+<table>
+  <tr><th>バージョン</th><th>申告された前処理</th></tr>
+<tr><td>A</td><td>画像ごとに min-max で uint8 に変換（figshare の README と同じ）、グレースケール化、224×224 にリサイズ、[0, 1] に正規化した後 (x − 0.5) / 0.5</td></tr><tr><td>B</td><td>画像ごとに min-max で uint8 に変換、画像を 3 チャネルに複製、224×224 にリサイズ、ImageNet の正規化</td></tr></table>
+<dl>
+  <dt>乱数シード</dt><dd>20261029</dd>
+  <dt>スコア合計の許容誤差</dt><dd>0.001</dd>
+  <dt>Python</dt><dd>3.12.6</dd>
+  <dt>依存パッケージ</dt><dd><code>medvision-qa==0.0.1</code>, <code>numpy==2.5.4</code>, <code>scipy==1.18.1</code>, <code>scikit-learn==1.9.1</code>, <code>jinja2==3.1.6</code></dd>
+</dl>
+
+<h2 id="s9">9. クラスとクラスの順序</h2>
+<dl>
+  <dt>宣言された順序</dt><dd><code>0: glioma</code>, <code>1: meningioma</code>, <code>2: pituitary</code></dd>
+  <dt>派生二値タスク</dt><dd>陽性 = glioma、陰性 = meningioma, pituitary</dd>
+</dl>
+
+<h2 id="s10">10. データ検証の概要</h2>
+<p>正解データのモード: <code>separate_file</code>. case_id による厳密な照合: 776 症例、すべてのファイルで一致。行の削除・修正・置換は一切行っていない。</p>
+<table>
+  <tr><th>ファイル</th><th>実施したチェック（すべて合格）</th></tr>
+  <tr><td>正解データ</td><td class="mono">encoding_utf8, csv_syntax, header_present, no_duplicate_columns, no_unknown_columns, required_columns, field_count, no_empty_lines, no_surrounding_whitespace, required_values_present, unique_case_id, labels_declared, patient_id_present</td></tr>
+  <tr><td>予測（バージョン A）</td><td class="mono">encoding_utf8, csv_syntax, header_present, no_duplicate_columns, no_unknown_columns, required_columns, field_count, no_empty_lines, no_surrounding_whitespace, required_values_present, unique_case_id, labels_declared, score_columns_complete, score_numeric, score_finite, score_in_bounds, score_sum_to_one(tol=0.001), predicted_is_argmax</td></tr>
+  <tr><td>予測（バージョン B）</td><td class="mono">encoding_utf8, csv_syntax, header_present, no_duplicate_columns, no_unknown_columns, required_columns, field_count, no_empty_lines, no_surrounding_whitespace, required_values_present, unique_case_id, labels_declared, score_columns_complete, score_numeric, score_finite, score_in_bounds, score_sum_to_one(tol=0.001), predicted_is_argmax</td></tr>
+</table>
+
+<h2 id="s11">11. 指標と定義</h2>
+<table>
+  <tr><th rowspan="2">指標</th><th colspan="2">バージョン A</th><th colspan="2">バージョン B</th><th rowspan="2">備考</th></tr>
+  <tr><th>推定値</th><th>95.0% 信頼区間</th><th>推定値</th><th>95.0% 信頼区間</th></tr>
+  <tr><td><code>accuracy</code></td>
+<td class="num">0.8003</td><td class="num">[0.7300, 0.8602]</td><td class="num">0.9278</td><td class="num">[0.8747, 0.9677]</td>    <td class="note"></td></tr>
+  <tr><td><code>macro_f1</code></td>
+<td class="num">0.7946</td><td class="num">[0.7168, 0.8512]</td><td class="num">0.9232</td><td class="num">[0.8665, 0.9637]</td>    <td class="note"></td></tr>
+  <tr><td><code>precision[glioma]</code></td>
+<td class="num">0.7588</td><td class="num">[0.5771, 0.8738]</td><td class="num">0.9481</td><td class="num">[0.8700, 0.9886]</td>    <td class="note"></td></tr>
+  <tr><td><code>precision[meningioma]</code></td>
+<td class="num">0.6806</td><td class="num">[0.4943, 0.8341]</td><td class="num">0.8170</td><td class="num">[0.6606, 0.9309]</td>    <td class="note"></td></tr>
+  <tr><td><code>precision[pituitary]</code></td>
+<td class="num">0.9558</td><td class="num">[0.8809, 1.0000]</td><td class="num">1.0000</td><td class="num">[1.0000, 1.0000]</td>    <td class="note">B: 幅ゼロの区間: 指標が一定の場合（例: 0 または 1 に張り付いている場合）、パーセンタイル・ブートストラップは不確実性を過小評価します<br></td></tr>
+  <tr><td><code>recall[glioma]</code></td>
+<td class="num">0.8000</td><td class="num">[0.6603, 0.8958]</td><td class="num">0.9288</td><td class="num">[0.8649, 0.9697]</td>    <td class="note"></td></tr>
+  <tr><td><code>recall[meningioma]</code></td>
+<td class="num">0.7500</td><td class="num">[0.6204, 0.8707]</td><td class="num">0.9337</td><td class="num">[0.8609, 0.9880]</td>    <td class="note"></td></tr>
+  <tr><td><code>recall[pituitary]</code></td>
+<td class="num">0.8351</td><td class="num">[0.7214, 0.9204]</td><td class="num">0.9228</td><td class="num">[0.7986, 1.0000]</td>    <td class="note"></td></tr>
+  <tr><td><code>f1[glioma]</code></td>
+<td class="num">0.7789</td><td class="num">[0.6373, 0.8622]</td><td class="num">0.9384</td><td class="num">[0.8757, 0.9705]</td>    <td class="note"></td></tr>
+  <tr><td><code>f1[meningioma]</code></td>
+<td class="num">0.7136</td><td class="num">[0.5732, 0.8122]</td><td class="num">0.8714</td><td class="num">[0.7698, 0.9392]</td>    <td class="note"></td></tr>
+  <tr><td><code>f1[pituitary]</code></td>
+<td class="num">0.8914</td><td class="num">[0.8080, 0.9464]</td><td class="num">0.9599</td><td class="num">[0.8880, 1.0000]</td>    <td class="note"></td></tr>
+  <tr><td><code>sensitivity</code></td>
+<td class="num">0.8000</td><td class="num">[0.6603, 0.8958]</td><td class="num">0.9288</td><td class="num">[0.8649, 0.9697]</td>    <td class="note"></td></tr>
+  <tr><td><code>specificity</code></td>
+<td class="num">0.8441</td><td class="num">[0.7752, 0.9038]</td><td class="num">0.9688</td><td class="num">[0.9367, 0.9930]</td>    <td class="note"></td></tr>
+  <tr><td><code>auroc</code></td>
+<td class="num">0.9160</td><td class="num">[0.8487, 0.9625]</td><td class="num">0.9904</td><td class="num">[0.9757, 0.9973]</td>    <td class="note"></td></tr>
+</table>
+<h3>定義</h3>
+<dl><dt><code>accuracy</code></dt><dd>predicted_label が true_label と一致した症例の割合。</dd><dt><code>precision</code></dt><dd>クラスごとの TP / (TP + FP)（一対他）。そのクラスが一度も予測されない場合は未定義。</dd><dt><code>recall</code></dt><dd>クラスごとの TP / (TP + FN)（一対他）。そのクラスが正解ラベルに存在しない場合は未定義。</dd><dt><code>f1</code></dt><dd>クラスごとの 2·TP / (2·TP + FP + FN)。そのクラスが正解ラベルにも予測にも存在しない場合は未定義。</dd><dt><code>macro_f1</code></dt><dd>宣言された全クラスの F1 の単純平均（重み付けなし）。いずれかの F1 が未定義なら未定義。</dd><dt><code>sensitivity</code></dt><dd>派生二値タスクの TP / (TP + FN)。陽性クラスが宣言されていない場合、または陽性症例がない場合は未定義。</dd><dt><code>specificity</code></dt><dd>派生二値タスクの TN / (TN + FP)。陽性クラスが宣言されていない場合、または陰性症例がない場合は未定義。</dd><dt><code>auroc</code></dt><dd>派生二値タスク。陽性スコアは陽性クラスのスコアの合計。Mann-Whitney 統計量で計算し、同順位は 1/2 として数える。スコアがない場合、陽性クラスが宣言されていない場合、または二値クラスの一方しか存在しない場合は未定義。</dd></dl>
+
+<h2 id="s12">12. 混同行列</h2>
+<p class="note">行 = 正解、列 = 予測。</p>
+<h3>バージョン A</h3>
+<table>
+  <tr><th></th><th>glioma</th><th>meningioma</th><th>pituitary</th></tr>
+<tr><th>glioma</th><td class="num">236</td><td class="num">54</td><td class="num">5</td></tr><tr><th>meningioma</th><td class="num">43</td><td class="num">147</td><td class="num">6</td></tr><tr><th>pituitary</th><td class="num">32</td><td class="num">15</td><td class="num">238</td></tr></table>
+<h3>バージョン B</h3>
+<table>
+  <tr><th></th><th>glioma</th><th>meningioma</th><th>pituitary</th></tr>
+<tr><th>glioma</th><td class="num">274</td><td class="num">21</td><td class="num">0</td></tr><tr><th>meningioma</th><td class="num">13</td><td class="num">183</td><td class="num">0</td></tr><tr><th>pituitary</th><td class="num">2</td><td class="num">20</td><td class="num">263</td></tr></table>
+
+<h2 id="s13">13. 信頼区間とパラメーター</h2>
+<dl>
+  <dt>手法</dt><dd>パーセンタイル ブートストラップ（両側、分位点の計算法: 線形補間）</dd>
+  <dt>信頼水準</dt><dd>0.95</dd>
+  <dt>リサンプリング回数</dt><dd>2000</dd>
+  <dt>乱数シード</dt><dd>20261029</dd>
+  <dt>リサンプリング単位</dt><dd>患者（64 単位）</dd>
+</dl>
+<p class="note">区間は、指標が全標本およびすべてのリサンプルで定義される場合にのみ算出する。</p>
+
+<h2 id="s14">14. 統計的検定、前提、限界</h2>
+<h3>対応のある差 Δ = B − A（対応のあるブートストラップ。A と B に同じ抽出を使用）</h3>
+<table>
+  <tr><th>指標</th><th>Δ</th><th>信頼区間</th><th>備考</th></tr>
+  <tr><td><code>accuracy</code></td><td class="num">0.1276</td><td class="num">[0.0742, 0.1850]</td><td class="note"></td></tr>
+  <tr><td><code>macro_f1</code></td><td class="num">0.1286</td><td class="num">[0.0742, 0.1877]</td><td class="note"></td></tr>
+  <tr><td><code>precision[glioma]</code></td><td class="num">0.1893</td><td class="num">[0.0908, 0.3311]</td><td class="note"></td></tr>
+  <tr><td><code>precision[meningioma]</code></td><td class="num">0.1364</td><td class="num">[0.0107, 0.2726]</td><td class="note"></td></tr>
+  <tr><td><code>precision[pituitary]</code></td><td class="num">0.0442</td><td class="num">[0.0000, 0.1191]</td><td class="note"></td></tr>
+  <tr><td><code>recall[glioma]</code></td><td class="num">0.1288</td><td class="num">[0.0417, 0.2275]</td><td class="note"></td></tr>
+  <tr><td><code>recall[meningioma]</code></td><td class="num">0.1837</td><td class="num">[0.0424, 0.3314]</td><td class="note"></td></tr>
+  <tr><td><code>recall[pituitary]</code></td><td class="num">0.0877</td><td class="num">[0.0425, 0.1362]</td><td class="note"></td></tr>
+  <tr><td><code>f1[glioma]</code></td><td class="num">0.1595</td><td class="num">[0.0911, 0.2628]</td><td class="note"></td></tr>
+  <tr><td><code>f1[meningioma]</code></td><td class="num">0.1578</td><td class="num">[0.0506, 0.2740]</td><td class="note"></td></tr>
+  <tr><td><code>f1[pituitary]</code></td><td class="num">0.0685</td><td class="num">[0.0339, 0.1157]</td><td class="note"></td></tr>
+  <tr><td><code>sensitivity</code></td><td class="num">0.1288</td><td class="num">[0.0417, 0.2275]</td><td class="note"></td></tr>
+  <tr><td><code>specificity</code></td><td class="num">0.1247</td><td class="num">[0.0664, 0.1903]</td><td class="note"></td></tr>
+  <tr><td><code>auroc</code></td><td class="num">0.0744</td><td class="num">[0.0308, 0.1354]</td><td class="note"></td></tr>
+</table>
+<h3>マクネマー検定（参考値。判定には使用しない）</h3>
+<dl>
+  <dt>手法</dt><dd>正確条件付きマクネマー検定（不一致ペアに対する両側二項検定）</dd>
+  <dt>ペア</dt><dd>両方正解: 599 · A のみ正解: 22 · B のみ正解: 121 · 両方不正解: 34</dd>
+  <dt>p 値</dt><dd>適用不可 — 患者あたり複数の症例があるためペアが独立ではなく、マクネマー検定の前提を満たさない</dd>
+</dl>
+<p class="note">前提: ペアが互いに独立であること。p 値が大きくても、同等性や性能低下がないことの証明にはならない。</p>
+<h3>DeLong 法</h3>
+<p>未実装。検証に使える独立した参照実装（R/pROC）がないため。AUROC の差は対応のあるブートストラップで推定している</p>
+
+<h2 id="s15">15. 分析前に定めた受入基準</h2>
+<table>
+  <tr><th>ID</th><th>説明</th><th>種別</th><th>評価対象</th><th>パラメーター</th></tr>
+  <tr><td>C1</td><td>ResNet18 のマクロ F1 が SimpleCNN に劣らない（マージン 0.03）</td><td><code>non_inferiority</code></td><td><code>macro_f1 (B − A)</code></td><td>マージン 0.0300</td></tr>
+  <tr><td>C2</td><td>ResNet18 の神経膠腫（対その他）の感度が 0.90 以上</td><td><code>absolute</code></td><td><code>sensitivity (B)</code></td><td>閾値 0.9000</td></tr>
+  <tr><td>C3</td><td>ResNet18 の神経膠腫（対その他）の AUROC が SimpleCNN を上回る</td><td><code>superiority</code></td><td><code>auroc (B − A)</code></td><td>Δ &gt; 0</td></tr>
+</table>
+<p class="note">本ツールでは、基準が分析前に定められたことを証明できない。設定ファイルのハッシュをバージョン履歴（git など）と照合すること。設定ファイルの SHA-256: <code>4c8981af5dac814ec14a1cf30dd2c34241b5e5e4ec0c01affe64d60d3e42f909</code></p>
+
+<h2 id="s16">16. 各基準の状態と総合判定</h2>
+<table>
+  <tr><th>ID</th><th>状態</th><th>推定値</th><th>信頼区間</th><th>根拠</th></tr>
+  <tr><td>C1</td><td><span class="state SATISFIED">SATISFIED（基準充足）</span></td><td class="num">0.1286</td><td class="num">[0.0742, 0.1877]</td><td>信頼区間 [0.0742, 0.1877]: 下限が −マージン（-0.0300）を上回る</td></tr>
+  <tr><td>C2</td><td><span class="state INCONCLUSIVE">INCONCLUSIVE（判定保留）</span></td><td class="num">0.9288</td><td class="num">[0.8649, 0.9697]</td><td>信頼区間 [0.8649, 0.9697] が閾値 0.9000 を含む</td></tr>
+  <tr><td>C3</td><td><span class="state SATISFIED">SATISFIED（基準充足）</span></td><td class="num">0.0744</td><td class="num">[0.0308, 0.1354]</td><td>信頼区間 [0.0308, 0.1354]: 下限が 0 を上回る</td></tr>
+</table>
+<p><strong>総合判定:</strong> <span class="state INCONCLUSIVE">INCONCLUSIVE（判定保留）</span> — 判定保留の基準: [&#39;C2&#39;]</p>
+<p class="note">NOT_SATISFIED の基準が 1 つでもあれば NOT_SATISFIED。そうでなく、INCONCLUSIVE の基準が 1 つでもあれば INCONCLUSIVE。すべての基準が SATISFIED の場合に限り SATISFIED。 区間が未定義または幅ゼロの場合、その基準は INCONCLUSIVE とする。</p>
+
+<h2 id="s17">17. サンプルサイズの根拠</h2>
+<dl>
+  <dt>実際のサンプルサイズ</dt><dd>776 症例、64 患者</dd>
+  <dt>根拠</dt><dd>データの入手可能性に基づく</dd>
+<dt>記載内容</dt><dd>サンプルサイズは公開データセット（233 患者）と、患者単位で 60/10/30 に分割する規則によって決まった。検出力の計算は行っていない。</dd></dl>
+<div class="banner">データの入手可能性で決まったサンプルサイズは、統計的な根拠にはならない。</div>
+<h2 id="s18">18. 頑健性試験の結果</h2>
+<p>未実施: 本バージョンのツールには頑健性試験の機能がない。</p>
+
+<h2 id="s19">19. 利用できない項目・実施していない項目</h2>
+<ul><li>マクネマー検定: 適用不可（患者あたり複数の症例があるためペアが独立ではなく、マクネマー検定の前提を満たさない）</li><li>DeLong 法: 未実装。検証に使える独立した参照実装（R/pROC）がないため。AUROC の差は対応のあるブートストラップで推定している</li><li>頑健性試験: 未実施（本バージョンのツールでは未対応）</li></ul>
+
+<h2 id="s20">20. 分析の限界</h2>
+<ul><li>パーセンタイル・ブートストラップ: 標本が小さい場合や指標が 0 または 1 に近い場合、実際の被覆確率が名目水準を下回ることがある。</li><li>一部の区間には警告が付いている（第 11 節を参照）。</li><li>3 件の基準を、多重性の調整なしで評価している。</li><li>本ツールでは、基準が分析前に定められたことを証明できない。設定ファイルのハッシュを外部の履歴（git）と照合すれば確認できる。</li><li>照合で確認しているのは症例 ID の一貫性であり、すべてのバージョンで同じ画像を指していることまでは確認していない。</li><li>指標は多クラス判定（argmax）に基づいて計算しており、別の判定閾値は評価していない。</li></ul>
+
+<h2 id="s21">21. What This Report Cannot Establish（本レポートで立証できないこと）</h2>
+<ul><li>有意でない結果は、性能低下がないこと、同等性、非劣性のいずれも証明しない。</li><li>本分析は臨床的妥当性確認ではなく、臨床上の安全性を示すものでもない。</li><li>本レポートは、ISO 13485、FDA QMSR、その他いかなる規制への適合も証明しない。</li><li>合成データによる感度試験は、実際の臨床撮像条件での妥当性を示すものではない。</li><li>準重複の検出だけでは、データリークも患者の同一性も証明されない。</li><li>結論は、実際に使用したデータ、プロトコル、仮定、手法の範囲に限られる。</li></ul>
+
+<footer class="note"><p>MedVision QA 0.0.1 により生成。外部リソースおよびスクリプトを含まない自己完結型のレポート。</p></footer>
+</body>
+</html>

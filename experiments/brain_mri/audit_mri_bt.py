@@ -1,14 +1,13 @@
-"""Audit des doublons du dataset Kaggle MRI-BT (Abou Ali), celui de brain-tumor-mri-classification.
+"""Duplicate audit of the Kaggle MRI-BT dataset (Abou Ali), the one used by brain-tumor-mri-classification.
 
-- Doublons exacts : SHA-256 des octets du fichier et SHA-256 des pixels décodés.
-- Quasi-doublons : pHash 64 bits, distance de Hamming ≤ seuil.
-- Recherche dans Training, dans Testing, entre Training et Testing, et entre MRI-BT et
-  figshare (provenance).
+- Exact duplicates: SHA-256 of the file bytes and SHA-256 of the decoded pixels.
+- Near-duplicates: 64-bit pHash, Hamming distance ≤ threshold.
+- Searched within Training, within Testing, between Training and Testing, and between
+  MRI-BT and figshare (provenance).
 
-Seuls des agrégats et des noms de fichiers sont écrits dans le dépôt
-(``mri_bt_audit/``) : aucune image, la licence de Br35H (classe notumor) n'étant pas
-ouverte. Des planches de paires signalées sont écrites dans ``data/`` (non versionné) pour
-l'inspection manuelle.
+Only aggregates and file names are written to the repository (``mri_bt_audit/``): no
+image, since the licence of Br35H (notumor class) is not open. Contact sheets of the
+flagged pairs are written to ``data/`` (not versioned) for manual inspection.
 
     python experiments/brain_mri/audit_mri_bt.py
 """
@@ -34,8 +33,8 @@ OUT = HERE / "mri_bt_audit"
 SHEETS = ROOT / "data" / "mri_bt_sheets"
 FIGSHARE_PNG = ROOT / "data" / "figshare" / "png"
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
-# Jeu original uniquement : les jeux « Challenging » sont des dégradations synthétiques des
-# mêmes images et seraient, par construction, des quasi-doublons.
+# Original set only: the "Challenging" sets are synthetic degradations of the same images
+# and would be near-duplicates by construction.
 ORIGINAL_SUBTREE = "BT-MRI Dataset"
 
 
@@ -50,7 +49,7 @@ def describe(path: Path, base: Path) -> dict:
 
 
 def sheet(pairs, items, base, name, limit=24):
-    """Planche de paires côte à côte (gauche | droite) pour l'inspection manuelle."""
+    """Contact sheet of side-by-side pairs (left | right) for manual inspection."""
     pairs = pairs[:limit]
     if not pairs:
         return
@@ -81,7 +80,7 @@ def main():
 
     def kind(i, j):
         a, b = items[i]["subset"], items[j]["subset"]
-        return f"{min(a, b)} ↔ {max(a, b)}" if a != b else f"dans {a}"
+        return f"{min(a, b)} ↔ {max(a, b)}" if a != b else f"within {a}"
 
     pair_kinds = Counter(kind(i, j) for i, j, _ in near)
     label_conflicts = [(i, j, d) for i, j, d in near if items[i]["label"] != items[j]["label"]]

@@ -1,12 +1,12 @@
-"""Détection de doublons exacts et de quasi-doublons d'images (spec § 13).
+"""Detection of exact duplicates and near-duplicates of images (spec § 13).
 
-- Doublon exact : SHA-256 identique des octets du fichier, donc même contenu de fichier.
-- Quasi-doublon : distance de Hamming faible entre empreintes perceptuelles (pHash DCT
-  64 bits). C'est une **ressemblance à examiner**, pas une preuve d'identité de patient
-  ni de fuite de données.
+- Exact duplicate: identical SHA-256 of the file bytes, hence identical file content.
+- Near-duplicate: small Hamming distance between perceptual fingerprints (64-bit DCT
+  pHash). It is a **resemblance to inspect**, not proof of patient identity or of data
+  leakage.
 
-Le cœur travaille sur des tableaux numpy. Seul ``load_grayscale`` dépend de Pillow
-(extra ``[images]``).
+The core works on numpy arrays. Only ``load_grayscale`` depends on Pillow (``[images]``
+extra).
 """
 
 import hashlib
@@ -16,8 +16,8 @@ from pathlib import Path
 import numpy as np
 from scipy.fft import dctn
 
-PHASH_SIZE = 8          # empreinte 8 × 8 = 64 bits
-PHASH_INPUT = 32        # image réduite à 32 × 32 avant la DCT
+PHASH_SIZE = 8          # 8 × 8 fingerprint = 64 bits
+PHASH_INPUT = 32        # image reduced to 32 × 32 before the DCT
 _BIT_WEIGHTS = (1 << np.arange(63, -1, -1, dtype=np.uint64)).astype(np.uint64)
 
 
@@ -30,7 +30,7 @@ def sha256_file(path) -> str:
 
 
 def load_grayscale(path, size: int = PHASH_INPUT) -> np.ndarray:
-    """Charge une image en niveaux de gris redimensionnée à ``size`` × ``size`` (float64)."""
+    """Loads an image as greyscale, resized to ``size`` × ``size`` (float64)."""
     from PIL import Image
 
     with Image.open(path) as image:
@@ -39,10 +39,10 @@ def load_grayscale(path, size: int = PHASH_INPUT) -> np.ndarray:
 
 
 def phash(gray: np.ndarray) -> int:
-    """pHash : DCT 2D de l'image 32 × 32, bloc 8 × 8 des basses fréquences, seuil médian
-    (calculé hors composante continue)."""
+    """pHash: 2D DCT of the 32 × 32 image, 8 × 8 block of low frequencies, median threshold
+    (computed without the DC component)."""
     if gray.shape != (PHASH_INPUT, PHASH_INPUT):
-        raise ValueError(f"image {PHASH_INPUT}×{PHASH_INPUT} attendue, reçu {gray.shape}")
+        raise ValueError(f"{PHASH_INPUT}×{PHASH_INPUT} image expected, got {gray.shape}")
     low = dctn(gray, norm="ortho")[:PHASH_SIZE, :PHASH_SIZE]
     median = np.median(low.ravel()[1:])
     bits = (low.ravel() > median).astype(np.uint64)
@@ -58,10 +58,10 @@ def hamming(a: int, b: int) -> int:
 
 
 def near_duplicate_pairs(hashes_a, hashes_b=None, max_distance: int = 6, block: int = 2048):
-    """Paires ``(i, j, distance)`` avec une distance ≤ ``max_distance``.
+    """Pairs ``(i, j, distance)`` with a distance ≤ ``max_distance``.
 
-    Sans ``hashes_b`` : paires i < j au sein de ``hashes_a``. Avec : paires entre les deux
-    ensembles. Calcul exhaustif par blocs, sans approximation.
+    Without ``hashes_b``: pairs i < j within ``hashes_a``. With it: pairs between the two
+    sets. Exhaustive computation by blocks, no approximation.
     """
     a = np.asarray(hashes_a, dtype=np.uint64)
     b = a if hashes_b is None else np.asarray(hashes_b, dtype=np.uint64)
@@ -78,7 +78,7 @@ def near_duplicate_pairs(hashes_a, hashes_b=None, max_distance: int = 6, block: 
 
 
 def exact_duplicate_groups(digests) -> list[list[int]]:
-    """Groupes d'indices partageant le même condensat (taille ≥ 2), dans l'ordre d'apparition."""
+    """Groups of indices sharing the same digest (size ≥ 2), in order of appearance."""
     groups = defaultdict(list)
     for i, d in enumerate(digests):
         groups[d].append(i)

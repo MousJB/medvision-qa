@@ -1,64 +1,66 @@
-# Phase 4 — Sources de données et plan (préparation)
+# Phase 4 — Data sources and plan (preparation)
 
-Date : 2026-10-29. **Mise en œuvre : voir [experiments/brain_mri/README.md](../experiments/brain_mri/README.md).** Les licences et métadonnées ci-dessous
-ont été lues via les API officielles (figshare, Kaggle, GitHub) à cette date.
+[日本語](ja/phase4_data_sources.md)
 
-## 1. Datasets candidats
+Date: 2026-10-29. **Execution: see [experiments/brain_mri/README.md](../experiments/brain_mri/README.md).**
+The licences and metadata below were read through the official APIs (figshare, Kaggle,
+GitHub) on that date.
 
-| Dataset | Lien | Licence (déclarée) | Contenu | `patient_id` | Rôle proposé |
+## 1. Candidate datasets
+
+| Dataset | Link | Licence (declared) | Content | `patient_id` | Proposed role |
 |---|---|---|---|---|---|
-| **figshare — Jun Cheng** (v8, 2024-12-21) | https://figshare.com/articles/dataset/brain_tumor_dataset/1512427 · DOI `10.6084/m9.figshare.1512427.v8` | **CC BY 4.0** (vérifiée via l'API figshare) | 3 064 coupes T1 avec gadolinium, **233 patients** ; méningiome 708, gliome 1 426, hypophyse 930 ; masques tumoraux ; `cvind.mat` (indices de validation croisée 5 plis) ; fichiers `.mat` ; ~880 Mo | **oui** (`cjdata.PID`) | **Principal** : entraîner 2 versions avec une séparation par patient, puis évaluer avec bootstrap par patient |
-| **Kaggle MRI-BT — Abou Ali** | https://www.kaggle.com/datasets/mohamadabouali1/mri-brain-tumor-dataset-4-class-7023-images · dépôt : https://github.com/Mohamad-AbouAli/MRIBrainTumorDataset | MIT (déclarée) | 7 023 images, 4 classes (dont `notumor`) + 3 jeux **synthétiques** (Blurred, Noisy, Motion) ; ~139 Mo | non | Celui de ton dépôt IRM : **audit des doublons** Training/Testing et **tests de sensibilité synthétiques** |
-| Kaggle — Masoud Nickparvar | https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset | CC BY 4.0 (déclarée) | Assemblage de figshare + SARTAJ + Br35H. Version actuelle : 7 200 images (1 400 / 400 par classe). Une version antérieure en comptait 7 023 | non | Référence de provenance ; alternative |
-| SARTAJ | https://www.kaggle.com/datasets/sartajbhuvaji/brain-tumor-classification-mri | MIT (déclarée) | Source amont (4 classes) | non | Amont uniquement |
-| Br35H | https://www.kaggle.com/datasets/ahmedhamada0/brain-tumor-detection | **« Data files © Original Authors »** : pas une licence ouverte | Source amont de la classe `notumor` | non | Amont uniquement : **ne pas redistribuer** |
+| **figshare — Jun Cheng** (v8, 2024-12-21) | https://figshare.com/articles/dataset/brain_tumor_dataset/1512427 · DOI `10.6084/m9.figshare.1512427.v8` | **CC BY 4.0** (checked through the figshare API) | 3,064 contrast-enhanced T1 slices, **233 patients**; meningioma 708, glioma 1,426, pituitary 930; tumour masks; `cvind.mat` (5-fold cross-validation indices); `.mat` files; ~880 MB | **yes** (`cjdata.PID`) | **Main**: train 2 versions with a patient-level split, then evaluate with a patient-level bootstrap |
+| **Kaggle MRI-BT — Abou Ali** | https://www.kaggle.com/datasets/mohamadabouali1/mri-brain-tumor-dataset-4-class-7023-images · repository: https://github.com/Mohamad-AbouAli/MRIBrainTumorDataset | MIT (declared) | 7,023 images, 4 classes (including `notumor`) + 3 **synthetic** sets (Blurred, Noisy, Motion); ~139 MB | no | The dataset of the `brain-tumor-mri-classification` repository: **duplicate audit** of Training/Testing and **synthetic sensitivity tests** |
+| Kaggle — Masoud Nickparvar | https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset | CC BY 4.0 (declared) | Assembled from figshare + SARTAJ + Br35H. Current version: 7,200 images (1,400 / 400 per class). An earlier version had 7,023 | no | Provenance reference; alternative |
+| SARTAJ | https://www.kaggle.com/datasets/sartajbhuvaji/brain-tumor-classification-mri | MIT (declared) | Upstream source (4 classes) | no | Upstream only |
+| Br35H | https://www.kaggle.com/datasets/ahmedhamada0/brain-tumor-detection | **"Data files © Original Authors"**: not an open licence | Upstream source of the `notumor` class | no | Upstream only: **do not redistribute** |
 
-## 2. Constats de provenance
+## 2. Provenance findings
 
-- **MRI-BT (Abou Ali) ≈ Nickparvar, première version : probable, non confirmé.** Même
-  total (7 023), mêmes 4 classes, et ton README indique 5 712 images d'entraînement. La
-  description Kaggle d'Abou Ali ne cite pas ses sources amont. À confirmer en comparant les
-  hashes des fichiers des deux datasets.
-- Si c'est le cas, la classe `notumor` vient de **Br35H**, dont la licence n'est pas
-  ouverte. La licence MIT déclarée sur Kaggle ne suffit pas à garantir les droits. Il ne
-  faut donc pas publier d'images, de vignettes ni de captures d'écran de ce dataset.
-  Seuls des agrégats et des hashes peuvent figurer dans le dépôt.
-- Les images figshare apparaissent dans plusieurs de ces assemblages : il y a un risque de
-  doublons, ou de coupes d'un même patient, à la fois en Training et en Testing.
-- Un commentaire d'utilisateur sur IEEE DataPort signale de possibles erreurs d'étiquette
-  dans les gliomes de SARTAJ. C'est anecdotique et non vérifié.
-- Les jeux « challenging » d'Abou Ali sont **synthétiques**, selon leur auteur. Ce sont
-  des tests de sensibilité, pas des conditions cliniques.
+- **MRI-BT (Abou Ali) ≈ first version of Nickparvar: probable, not confirmed.** Same total
+  (7,023), same 4 classes, and the `brain-tumor-mri-classification` README reports 5,712
+  training images. Abou Ali's Kaggle description does not cite its upstream sources. To be
+  confirmed by comparing the file hashes of both datasets.
+- If so, the `notumor` class comes from **Br35H**, whose licence is not open. The MIT
+  licence declared on Kaggle is not enough to guarantee the rights. No image, thumbnail
+  or screenshot of this dataset must therefore be published. Only aggregates and hashes
+  may appear in the repository.
+- figshare images appear in several of these assemblies: there is a risk of duplicates,
+  or of slices of one patient, in both Training and Testing.
+- A user comment on IEEE DataPort reports possible label errors among SARTAJ's gliomas.
+  This is anecdotal and unverified.
+- Abou Ali's "challenging" sets are **synthetic**, according to their author. They are
+  sensitivity tests, not clinical conditions.
 
-## 3. Plan proposé
+## 3. Proposed plan
 
-1. **figshare (principal).** Télécharger les 4 zip et `cvind.mat` (sans compte). Convertir
-   les `.mat` avec `h5py` si c'est le format MATLAB v7.3 (à vérifier), en lisant uniquement
-   les champs de données, sans exécuter de code. Construire un manifeste SHA-256.
-   Séparation train/val/test **par patient**. Vérifier si `cvind.mat` est par patient.
-2. Entraîner **deux versions réelles** (par ex. SimpleCNN et ResNet18, ou ResNet18 avec et
-   sans augmentation), avec graines, configurations et hashes des poids enregistrés. Le GPU
-   local (GTX 1650, 4 Go) suffit avec de petits lots.
-3. Exporter les prédictions **avec les scores softmax** et `patient_id`, au format de
-   [data_format.md](data_format.md). Évaluer avec MedVision QA (unité : patient).
-4. **MRI-BT (audit).** Doublons exacts (SHA-256) et quasi-doublons (hash perceptuel) entre
-   Training et Testing, puis inspection manuelle des cas signalés. Rapporter les comptes,
-   sans conclure à une fuite de données sans preuve de provenance.
-5. Tests de sensibilité sur les jeux synthétiques, présentés comme tels.
+1. **figshare (main).** Download the 4 zip files and `cvind.mat` (no account needed).
+   Convert the `.mat` files with `h5py` if they use the MATLAB v7.3 format (to check),
+   reading data fields only, without executing code. Build a SHA-256 manifest.
+   Train/val/test split **by patient**. Check whether `cvind.mat` is patient-level.
+2. Train **two real versions** (e.g. SimpleCNN and ResNet18, or ResNet18 with and without
+   augmentation), recording seeds, configurations and weight hashes. The local GPU (GTX
+   1650, 4 GB) is enough with small batches.
+3. Export the predictions **with the softmax scores** and `patient_id`, in the format of
+   [data_format.md](data_format.md). Evaluate with MedVision QA (unit: patient).
+4. **MRI-BT (audit).** Exact duplicates (SHA-256) and near-duplicates (perceptual hash)
+   between Training and Testing, then manual inspection of the flagged cases. Report the
+   counts, without concluding to data leakage without proof of provenance.
+5. Sensitivity tests on the synthetic sets, presented as such.
 
-## 4. Ce qui est nécessaire
+## 4. What was needed
 
-| Élément | Pour | État |
+| Item | For | State on 2026-10-29 |
 |---|---|---|
-| Rien (téléchargement public) | figshare | prêt |
-| Compte Kaggle + jeton API (`%USERPROFILE%\.kaggle\kaggle.json`) ou téléchargement manuel | MRI-BT, Nickparvar | **absent** (aucun dossier `.kaggle`) |
-| PyTorch + torchvision avec CUDA dans un environnement séparé | entraînement | à installer (ne pas l'ajouter aux dépendances de MedVision QA) |
-| ~2 Go d'espace disque | données et poids | à vérifier |
-| Ton accord pour l'usage (portfolio, non commercial) au vu des licences | toutes | à confirmer |
+| Nothing (public download) | figshare | ready |
+| Kaggle account + API token (`%USERPROFILE%\.kaggle\kaggle.json`) or manual download | MRI-BT, Nickparvar | **missing** (no `.kaggle` folder) |
+| PyTorch + torchvision with CUDA in a separate environment | training | to install (not added to MedVision QA's dependencies) |
+| ~2 GB of disk space | data and weights | to check |
+| Owner's agreement on the use (portfolio, non-commercial) given the licences | all | to confirm |
 
-## 5. Ce qui n'est pas réutilisable du dépôt `brain-tumor-mri-classification`
+## 5. What cannot be reused from the `brain-tumor-mri-classification` repository
 
-Le notebook est vide, il n'y a ni poids ni prédictions versionnés, et l'évaluation ne
-conserve que l'argmax, sans scores. Les chiffres du README ne sont donc pas
-reproductibles ; il faut réentraîner. Le code `src/models.py` (SimpleCNN, ResNet18) reste
-réutilisable.
+The notebook is empty, no weights or predictions are versioned, and the evaluation keeps
+only the argmax, without scores. The README figures are therefore not reproducible;
+retraining is needed. The `src/models.py` code (SimpleCNN, ResNet18) remains reusable.

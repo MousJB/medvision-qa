@@ -1,4 +1,4 @@
-"""Intégration : configuration TOML + CSV synthétiques → décision."""
+"""Integration: TOML configuration + synthetic CSV files → decision."""
 
 import numpy as np
 import pytest
@@ -40,7 +40,7 @@ def scenario(tmp_path):
         config = tmp_path / "config.toml"
         config.write_text(f'''schema_version = "0.1"
 [evaluation]
-title = "Scénario synthétique"
+title = "Synthetic scenario"
 [classes]
 order = {list(CLASSES)!r}
 positive = ["glioma", "meningioma", "pituitary"]
@@ -66,7 +66,7 @@ status = "based_on_data_availability"
 
 NI = '[[criteria]]\nid = "NI"\ndescription = "NI accuracy"\nkind = "non_inferiority"\nmetric = "accuracy"\nmargin = 0.03\n'
 SUP = '[[criteria]]\nid = "SUP"\ndescription = "Sup AUROC"\nkind = "superiority"\nmetric = "auroc"\n'
-ABS = '[[criteria]]\nid = "ABS"\ndescription = "Sensibilité"\nkind = "absolute"\nmetric = "sensitivity"\nthreshold = 0.8\n'
+ABS = '[[criteria]]\nid = "ABS"\ndescription = "Sensitivity"\nkind = "absolute"\nmetric = "sensitivity"\nthreshold = 0.8\n'
 
 
 def test_clear_improvement_satisfies_all(scenario):
@@ -94,7 +94,7 @@ def test_run_metadata_recorded(scenario):
     assert result.run.started_at_utc.endswith("+00:00")
     assert set(result.run.packages) == {"medvision-qa", "numpy", "scipy", "scikit-learn", "jinja2"}
     assert result.config.sample_size.status == "based_on_data_availability"
-    assert "non implémenté" in result.delong_status
+    assert result.delong_status.key == "cmp.delong_status"
     assert result.predictions["A"].source.sha256 != result.predictions["B"].source.sha256
     assert np.array(result.confusion_matrices["A"]).sum() == 600
 
@@ -110,7 +110,7 @@ def test_reproducible(scenario):
 def test_invalid_data_blocks_evaluation(scenario, tmp_path):
     config = scenario(0.85, 0.85, NI)
     lines = (tmp_path / "b.csv").read_text(encoding="utf-8").splitlines()
-    (tmp_path / "b.csv").write_text("\n".join(lines[:-1]) + "\n", encoding="utf-8")  # un cas manquant
+    (tmp_path / "b.csv").write_text("\n".join(lines[:-1]) + "\n", encoding="utf-8")  # one case missing
     with pytest.raises(ValidationError) as exc:
         run_evaluation(config)
     assert exc.value.issues[0].rule == "same_cases"

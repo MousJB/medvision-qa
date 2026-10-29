@@ -34,8 +34,8 @@ def test_classspec_rejects_duplicates_and_bad_names():
 
 
 def test_classspec_rejects_string_positive_instead_of_list():
-    # Une chaîne itérée caractère par caractère serait un bug silencieux.
-    with pytest.raises(ConfigError, match="liste"):
+    # A string iterated character by character would be a silent bug.
+    with pytest.raises(ConfigError, match="list"):
         ClassSpec(("ab", "cd"), "ab")
 
 
@@ -50,7 +50,7 @@ def test_classspec_positive_indices(classes):
     assert classes.positive_indices == (0, 1, 3)
 
 
-# --- Vérité terrain --------------------------------------------------------------------
+# --- Ground truth ----------------------------------------------------------------------
 
 def test_ground_truth_valid(write_csv, classes):
     path = write_csv(GT_OK)
@@ -78,7 +78,7 @@ def test_crlf_line_endings_accepted(write_csv, classes):
 
 
 def test_non_utf8_rejected(write_csv, classes):
-    path = write_csv("case_id,true_label\nc1,glioma\nc2,méningiome\n", encoding="latin-1")
+    path = write_csv("case_id,true_label\nc1,glioma\nc2,glioma_é\n", encoding="latin-1")
     with pytest.raises(ValidationError) as exc:
         load_ground_truth(path, classes)
     assert rules(exc) == ["encoding_utf8"]
@@ -121,7 +121,7 @@ def test_duplicate_case_id_reports_both_lines(write_csv, classes):
         load_ground_truth(write_csv("case_id,true_label\nc1,glioma\nc2,notumor\nc1,glioma\n"), classes)
     (issue,) = exc.value.issues
     assert issue.rule == "unique_case_id"
-    assert issue.line == 4 and "ligne 2" in issue.message
+    assert issue.line == 4 and "line 2" in str(issue.message)
 
 
 def test_empty_case_id_and_label(write_csv, classes):
@@ -174,10 +174,10 @@ def test_all_errors_collected_in_one_pass(write_csv, classes):
     with pytest.raises(ValidationError) as exc:
         load_ground_truth(write_csv(text), classes)
     assert sorted(rules(exc)) == ["labels_declared", "required_values_present", "unique_case_id"]
-    assert "3 problème(s)" in str(exc.value)
+    assert "3 validation issue(s)" in str(exc.value)
 
 
-# --- Prédictions -----------------------------------------------------------------------
+# --- Predictions -----------------------------------------------------------------------
 
 def test_predictions_valid_with_scores(write_csv, classes):
     preds = load_predictions(write_csv(PRED_OK), classes)
@@ -191,7 +191,7 @@ def test_score_columns_mapped_by_name_not_position(write_csv, classes):
     text = ("case_id,score_pituitary,score_notumor,score_meningioma,score_glioma,predicted_label\n"
             "c1,0.1,0.2,0.3,0.4,glioma\n")
     preds = load_predictions(write_csv(text), classes)
-    assert preds.scores["c1"] == (0.4, 0.3, 0.2, 0.1)  # ordre de ClassSpec
+    assert preds.scores["c1"] == (0.4, 0.3, 0.2, 0.1)  # ClassSpec order
 
 
 def test_predictions_without_scores(write_csv, classes):

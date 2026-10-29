@@ -67,16 +67,17 @@ def test_valid_config(make_config, tmp_path):
     cfg = load_config(make_config())
     assert cfg.classes.positive == ("glioma", "meningioma", "pituitary")
     assert cfg.ground_truth_file == (tmp_path / "gt.csv").resolve()
-    assert cfg.versions["B"].code_commit == ""  # non fourni, pas deviné
+    assert cfg.versions["B"].code_commit == ""  # not provided, not guessed
     assert cfg.probability_sum_tolerance == 1e-3
     assert re.fullmatch(r"[0-9a-f]{64}", cfg.sha256)
     (criterion,) = cfg.criteria
     assert criterion.metric_key == "macro_f1" and criterion.margin == 0.02
 
 
-def test_documented_example_is_valid(tmp_path):
-    # L'exemple complet de docs/evaluation_config.md doit rester chargeable.
-    doc = (ROOT / "docs" / "evaluation_config.md").read_text(encoding="utf-8")
+@pytest.mark.parametrize("doc_path", ["docs/evaluation_config.md", "docs/ja/evaluation_config.md"])
+def test_documented_example_is_valid(tmp_path, doc_path):
+    # The complete example of the configuration guide (both languages) must stay loadable.
+    doc = (ROOT / doc_path).read_text(encoding="utf-8")
     example = re.search(r"```toml\n(.*?)```", doc, re.S).group(1)
     for name in ("ground_truth.csv", "preds_v1.csv", "preds_v2.csv"):
         (tmp_path / name).write_text("x\n", encoding="utf-8")
@@ -88,21 +89,21 @@ def test_documented_example_is_valid(tmp_path):
 
 
 @pytest.mark.parametrize("replace, message", [
-    ({'title = "Test"': 'title = "Test"\ntitel = "x"'}, "inconnue"),
-    ({'seed = 1': 'seed = 1\nseeed = 2'}, "inconnue"),
-    ({'seed = 1\n': ''}, "obligatoire"),
+    ({'title = "Test"': 'title = "Test"\ntitel = "x"'}, "Unknown key"),
+    ({'seed = 1': 'seed = 1\nseeed = 2'}, "Unknown key"),
+    ({'seed = 1\n': ''}, "Required key"),
     ({'bootstrap_resamples = 1000': 'bootstrap_resamples = 100'}, "1000"),
     ({'schema_version = "0.1"': 'schema_version = "9"'}, "schema_version"),
-    ({'positive = ["glioma", "meningioma", "pituitary"]': 'positive = "glioma"'}, "liste"),
-    ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "missing.csv"'}, "introuvable"),
-    ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "../gt.csv"'}, "sort du dossier"),
-    ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "C:/gt.csv"'}, "absolu"),
-    ({'ground_truth_mode = "separate_file"': 'ground_truth_mode = "embedded"'}, "vide en mode"),
-    ({'id = "v2"': 'id = "v1"'}, "différents"),
+    ({'positive = ["glioma", "meningioma", "pituitary"]': 'positive = "glioma"'}, "list"),
+    ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "missing.csv"'}, "file not found"),
+    ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "../gt.csv"'}, "leaves the configuration folder"),
+    ({'ground_truth_file = "gt.csv"': 'ground_truth_file = "C:/gt.csv"'}, "absolute path"),
+    ({'ground_truth_mode = "separate_file"': 'ground_truth_mode = "embedded"'}, "must be empty in 'embedded' mode"),
+    ({'id = "v2"': 'id = "v1"'}, "must differ"),
     ({'id = "v1"\n': 'id = "v1"\ncode_commit = "main"\n'}, "commit"),
     ({'id = "v1"\n': 'id = "v1"\nweights_sha256 = "abc"\n'}, "SHA-256"),
-    ({'status = "not_provided"': 'status = "provided"'}, "obligatoire"),
-    ({'status = "not_provided"': 'status = "not_provided"\njustification = "x"'}, "vide"),
+    ({'status = "not_provided"': 'status = "provided"'}, "is required for status"),
+    ({'status = "not_provided"': 'status = "not_provided"\njustification = "x"'}, "must be empty for status"),
     ({'status = "not_provided"': 'status = "maybe"'}, "status"),
     ({'margin = 0.02': 'margin = 0'}, "margin"),
     ({'margin = 0.02': 'margin = -0.02'}, "margin"),
@@ -116,14 +117,14 @@ def test_invalid_configs_rejected(make_config, replace, message):
 
 
 def test_no_criteria_rejected(make_config):
-    text = "criteria = []\n" + BASE[:BASE.index("[[criteria]]")]  # clé racine : avant les tables
-    with pytest.raises(ConfigError, match="sans critère"):
+    text = "criteria = []\n" + BASE[:BASE.index("[[criteria]]")]  # root key: before the tables
+    with pytest.raises(ConfigError, match="without criteria"):
         load_config(make_config(text))
 
 
 def test_duplicate_criterion_id_rejected(make_config):
     text = BASE + BASE[BASE.index("[[criteria]]"):]
-    with pytest.raises(ConfigError, match="dupliqué"):
+    with pytest.raises(ConfigError, match="Duplicate criterion id"):
         load_config(make_config(text))
 
 
@@ -134,7 +135,7 @@ def test_comparison_criterion_requires_version_b(make_config):
 
 
 def test_absolute_defaults_to_b_and_accepts_explicit_version(make_config):
-    absolute = ('\n[[criteria]]\nid = "C2"\ndescription = "seuil"\nkind = "absolute"\n'
+    absolute = ('\n[[criteria]]\nid = "C2"\ndescription = "threshold"\nkind = "absolute"\n'
                 'metric = "recall"\nclass = "glioma"\nthreshold = 0.9\n')
     cfg = load_config(make_config(BASE + absolute))
     assert cfg.criteria[1].version == "B" and cfg.criteria[1].metric_key == "recall[glioma]"
@@ -150,5 +151,5 @@ def test_binary_metric_requires_positive_classes(make_config):
 
 
 def test_invalid_toml_rejected(make_config):
-    with pytest.raises(ConfigError, match="illisible"):
+    with pytest.raises(ConfigError, match="Unreadable configuration"):
         load_config(make_config("schema_version = \n"))

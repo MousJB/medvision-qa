@@ -1,13 +1,18 @@
-"""Historique local des évaluations (SQLite, bibliothèque standard).
+"""Local history of evaluations (SQLite, standard library).
 
-Les évaluations rejetées (configuration ou données invalides) sont aussi enregistrées,
-avec le résumé des erreurs : un refus est une information à tracer.
+Rejected evaluations (invalid configuration or data) are recorded too, with their errors:
+a refusal is information worth tracing. Messages are stored in structured form (catalog key
+and parameters) so the history can be shown in any supported language.
 """
 
+import json
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
+
+from medvision_qa.i18n import Text, raw
+from medvision_qa.validation import ValidationIssue
 
 COMPLETED = "completed"
 REJECTED = "rejected"
@@ -37,16 +42,59 @@ class EvaluationRecord:
     status: str
     title: str | None = None
     decision: str | None = None
-    decision_reason: str | None = None
+    decision_reason: str | None = None  # JSON of dump_message(Text)
     config_sha256: str | None = None
     n_cases: int | None = None
     version_a: str | None = None
     version_b: str | None = None
-    criteria_json: str | None = None  # [{id, description, state, reason}]
-    error: str | None = None
+    criteria_json: str | None = None  # [{id, description, quantity, state, reason}]
+    error: str | None = None  # JSON list of dump_message(...)
 
 
 FIELDS = tuple(EvaluationRecord.__dataclass_fields__)
+
+
+def dump_message(message: Text | ValidationIssue) -> dict:
+    if isinstance(message, ValidationIssue):
+        return {"issue": {"file": message.file, "rule": message.rule, "message": message.message.to_dict(),
+                          "line": message.line, "column": message.column, "value": message.value}}
+    return {"text": message.to_dict()}
+
+
+def load_message(data) -> Text | ValidationIssue:
+    """Inverse of ``dump_message``. A plain string (older history) is shown as is."""
+    if isinstance(data, str):
+        return raw(data)
+    if "issue" in data:
+        issue = dict(data["issue"])
+        issue["message"] = Text.from_dict(issue["message"])
+        return ValidationIssue(**issue)
+    return Text.from_dict(data["text"])
+
+
+def _json_or_none(value: str):
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def load_text(value: str | None) -> Text | ValidationIssue | None:
+    """A single stored message (e.g. ``decision_reason``)."""
+    if value is None:
+        return None
+    data = _json_or_none(value)
+    return load_message(data) if isinstance(data, dict) else raw(value)
+
+
+def load_messages(value: str | None) -> list:
+    """A stored list of messages (``error``)."""
+    if not value:
+        return []
+    data = _json_or_none(value)
+    if not isinstance(data, list):
+        return [raw(line) for line in value.splitlines()]
+    return [load_message(item) for item in data]
 
 
 class History:

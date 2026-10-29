@@ -2,23 +2,23 @@
 {% block title %}{{ record.title }} — MedVision QA{% endblock %}
 {% block content %}
 <h1>{{ record.title }}</h1>
-<p class="muted">Exécution <code>{{ record.run_id }}</code> · {{ record.created_at_utc }} UTC · {{ record.n_cases }} cas ·
+<p class="muted">{{ _("r.run") }} <code>{{ record.run_id }}</code> · {{ record.created_at_utc }} UTC · {{ _("web.cases_n", n=record.n_cases) }} ·
 <code>{{ record.version_a }}</code>{% if record.version_b %} → <code>{{ record.version_b }}</code>{% endif %}</p>
 
-<p><strong>Conclusion globale :</strong> <span class="state {{ record.decision }}">{{ record.decision }}</span> — {{ record.decision_reason }}</p>
+<p><strong>{{ _("r.overall") }}</strong> {{ state(record.decision) }} — {{ tr(decision_reason) }}</p>
 
 <table>
-  <tr><th>Critère</th><th>Quantité</th><th>État</th><th>Justification</th></tr>
+  <tr><th>{{ _("web.col_criterion") }}</th><th>{{ _("r.quantity") }}</th><th>{{ _("r.state") }}</th><th>{{ _("r.justification") }}</th></tr>
   {% for c in criteria %}
   <tr><td>{{ c.id }} — {{ c.description }}</td><td><code>{{ c.quantity }}</code></td>
-      <td><span class="state {{ c.state }}">{{ c.state }}</span></td><td>{{ c.reason }}</td></tr>
+      <td>{{ state(c.state) }}</td><td>{{ tr(c.reason) }}</td></tr>
   {% endfor %}
 </table>
 
 <p class="actions">
-  <a href="/evaluations/{{ record.run_id }}/report">Ouvrir le Version Verification Record</a>
-  <a href="/evaluations/{{ record.run_id }}/report/download">Télécharger le rapport HTML</a>
-  <a href="/">Nouvelle évaluation</a>
+  <a href="{{ url('/evaluations/' ~ record.run_id ~ '/report') }}">{{ _("web.open_report") }}</a>
+  <a href="{{ url('/evaluations/' ~ record.run_id ~ '/report/download') }}">{{ _("web.download_report") }}</a>
+  <a href="{{ url('/') }}">{{ _("web.new_evaluation") }}</a>
 </p>
-<p class="note">Le rapport complet contient les métriques, intervalles, matrices de confusion, éléments non fournis, limites et la section « What This Report Cannot Establish ». Configuration SHA-256 <code>{{ record.config_sha256 }}</code>.</p>
+<p class="note">{{ _("web.report_note") }} <code>{{ record.config_sha256 }}</code></p>
 {% endblock %}

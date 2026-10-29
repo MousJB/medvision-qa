@@ -1,4 +1,4 @@
-# Environnements
+# Environments
 .venv/
 .venv-*/
 venv/
@@ -8,14 +8,14 @@ __pycache__/
 build/
 dist/
 
-# Outils
+# Tools
 .pytest_cache/
 .coverage
 htmlcov/
 .vscode/
 .idea/
 
-# Données et artefacts : ne jamais versionner d'images médicales ni de poids de modèles
+# Data and artefacts: never version medical images or model weights
 data/
 *.dcm
 *.nii
@@ -26,10 +26,10 @@ data/
 *.pkl
 *.pickle
 
-# Sorties locales
+# Local outputs
 reports/
 *.sqlite
 *.db
 
-# Interface web : évaluations et historique locaux
+# Web interface: local evaluations and history
 medvision_data/

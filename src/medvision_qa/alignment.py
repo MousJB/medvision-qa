@@ -1,7 +1,7 @@
-"""Alignement explicite des cas par ``case_id`` (docs/data_format.md § 5-6).
+"""Explicit case alignment on ``case_id`` (docs/data_format.md § 5-6).
 
-Les ensembles de ``case_id`` doivent être identiques : aucun appariement par position,
-aucune intersection implicite.
+The sets of ``case_id`` must be identical: no matching by position, no implicit
+intersection.
 """
 
 from collections.abc import Mapping
@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from medvision_qa.classes import ClassSpec
+from medvision_qa.i18n import msg
 from medvision_qa.validation import GroundTruth, Predictions, ValidationError, ValidationIssue
 
 SEPARATE_FILE = "separate_file"
@@ -18,10 +19,10 @@ EMBEDDED = "embedded"
 
 @dataclass(frozen=True)
 class AlignedData:
-    """Données alignées, triées par ``case_id`` pour ne pas dépendre de l'ordre des fichiers.
+    """Aligned data, sorted by ``case_id`` so that file order does not matter.
 
-    ``y_true`` / ``y_pred`` : indices dans ``classes.order``. ``scores[v]`` : matrice
-    (n, k) ou None. ``groups`` : indice de patient par cas, ou None.
+    ``y_true`` / ``y_pred``: indices into ``classes.order``. ``scores[v]``: (n, k)
+    matrix or None. ``groups``: patient index per case, or None.
     """
 
     classes: ClassSpec
@@ -40,11 +41,11 @@ class AlignedData:
 def _compare_ids(reference_name, reference_ids, other_name, other_ids, issues):
     for case_id in sorted(reference_ids - other_ids):
         issues.append(ValidationIssue(other_name, "same_cases",
-                                      f"cas présent dans {reference_name} mais absent ici",
+                                      msg("val.case_missing_here", reference=reference_name),
                                       column="case_id", value=case_id))
     for case_id in sorted(other_ids - reference_ids):
         issues.append(ValidationIssue(other_name, "same_cases",
-                                      f"cas absent de {reference_name}",
+                                      msg("val.case_extra", reference=reference_name),
                                       column="case_id", value=case_id))
 
 
@@ -53,19 +54,19 @@ def _compare_labels(reference_name, reference, other_name, other, issues):
         if reference[case_id] != other[case_id]:
             issues.append(ValidationIssue(
                 other_name, "true_label_consistent",
-                f"true_label différent de celui de {reference_name} ({reference[case_id]!r})",
+                msg("val.true_label_mismatch", reference=reference_name, expected=repr(reference[case_id])),
                 column="true_label", value=f"{case_id}: {other[case_id]}"))
 
 
 def align(classes: ClassSpec, predictions: Mapping[str, Predictions],
           ground_truth: GroundTruth | None = None) -> AlignedData:
-    """Aligne une ou plusieurs versions (``{"A": ..., "B": ...}``) sur la vérité terrain.
+    """Aligns one or more versions (``{"A": ..., "B": ...}``) on the ground truth.
 
-    ``ground_truth`` fourni : mode ``separate_file``. Absent : mode ``embedded``, chaque
-    fichier de prédictions doit alors contenir ``true_label``.
+    ``ground_truth`` given: ``separate_file`` mode. Absent: ``embedded`` mode, and every
+    predictions file must then contain ``true_label``.
     """
     if not predictions:
-        raise ValueError("Au moins une version de prédictions est requise.")
+        raise ValueError("At least one predictions version is required.")
     issues: list[ValidationIssue] = []
     versions = list(predictions)
 
@@ -79,8 +80,7 @@ def align(classes: ClassSpec, predictions: Mapping[str, Predictions],
         if missing:
             raise ValidationError([
                 ValidationIssue(predictions[v].source.path, "true_label_available",
-                                "mode embedded : colonne true_label requise sans fichier de "
-                                "vérité terrain", column="true_label")
+                                msg("val.true_label_required"), column="true_label")
                 for v in missing])
         reference_name = predictions[versions[0]].source.path
         labels = predictions[versions[0]].true_labels

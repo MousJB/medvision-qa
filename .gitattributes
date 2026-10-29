@@ -1,4 +1,4 @@
-# Données de démonstration : octets figés (hashes SHA-256 reproductibles sur tout OS)
+# Demo and evaluation data: frozen bytes (SHA-256 hashes reproducible on any OS)
 examples/**/*.csv -text
-examples/**/config.toml -text
+examples/**/*.toml -text
 experiments/**/figshare_eval/* -text

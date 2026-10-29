@@ -59,7 +59,7 @@ def test_interval_brackets_estimate(synthetic):
 
 
 def test_accuracy_close_to_normal_approximation(synthetic):
-    # Contrôle indépendant : pour n = 400, le percentile bootstrap doit être proche de Wald.
+    # Independent check: for n = 400, the percentile bootstrap must be close to Wald.
     ci = run(synthetic, n_resamples=4000).intervals["accuracy"]
     p, n = ci.estimate.value, synthetic.n_cases
     half_width = 1.959964 * np.sqrt(p * (1 - p) / n)
@@ -74,31 +74,31 @@ def test_higher_confidence_gives_wider_interval(synthetic):
 
 
 def test_undefined_estimate_gives_no_interval():
-    data = make_data([0] * 40, [0] * 40)  # aucun positif
+    data = make_data([0] * 40, [0] * 40)  # no positive case
     ci = run(data).intervals["sensitivity"]
-    assert not ci.defined and ci.undefined_reason.startswith("métrique indéfinie")
+    assert not ci.defined and str(ci.undefined_reason).startswith("metric undefined")
 
 
 def test_metric_undefined_in_some_resamples_gives_no_interval():
-    # Un seul positif : absent de ~37 % des rééchantillonnages.
+    # A single positive case: absent from ~37% of the resamples.
     data = make_data([1] + [0] * 39, [1] + [0] * 39)
     ci = run(data).intervals["sensitivity"]
     assert ci.estimate.value == 1.0
     assert not ci.defined
-    assert "rééchantillonnages" in ci.undefined_reason
+    assert ci.undefined_reason.key == "ci.undefined_in_resamples"
 
 
 def test_degenerate_interval_warned():
     data = make_data([0, 1] * 20, [0, 1] * 20)
     ci = run(data).intervals["accuracy"]
     assert ci.lower == ci.upper == 1.0
-    assert any("largeur nulle" in w for w in ci.warnings)
+    assert any(w.key == "ci.zero_width_warning" for w in ci.warnings)
 
 
 def test_small_sample_warned():
     data = make_data([0, 1, 0, 1, 0, 1, 1, 0, 0, 1], [0, 1, 1, 1, 0, 1, 0, 0, 0, 1])
     ci = run(data).intervals["accuracy"]
-    assert any("< 30" in w for w in ci.warnings)
+    assert any("< 30" in str(w) for w in ci.warnings)
 
 
 def test_patient_level_resampling_keeps_patients_whole():
@@ -109,13 +109,13 @@ def test_patient_level_resampling_keeps_patients_whole():
         idx = resample_indices(rng, len(groups), members)
         drawn = groups[idx]
         for g in np.unique(drawn):
-            # chaque patient tiré apparaît avec tous ses cas, un nombre entier de fois
+            # each drawn patient appears with all of its cases, a whole number of times
             assert np.sum(drawn == g) % np.sum(groups == g) == 0
 
 
 def test_patient_unit_recorded_and_wider_with_correlated_cases():
-    # 20 patients × 10 images, prédictions identiques au sein d'un patient : la vraie
-    # incertitude est celle de 20 unités, pas de 200.
+    # 20 patients × 10 images, identical predictions within a patient: the real
+    # uncertainty is that of 20 units, not 200.
     rng = np.random.default_rng(3)
     correct_by_patient = rng.random(20) < 0.7
     groups = np.repeat(np.arange(20), 10)

@@ -1,7 +1,7 @@
-"""MedVision QA — vérification comparative de versions de modèles de classification d'images médicales.
+"""MedVision QA: comparative verification of medical image classification model versions.
 
-Outil d'aide à l'évaluation technique. Ce n'est ni un dispositif médical, ni un outil de
-diagnostic, ni une validation clinique, ni une preuve de conformité réglementaire.
+A technical evaluation aid. It is not a medical device, a diagnostic tool, a clinical
+validation or proof of regulatory compliance.
 """
 
 from importlib.metadata import version

@@ -1,79 +1,80 @@
-# Format des fichiers d'entrée — v0.1
+# Input file format — v0.1
 
-Statut : défini en Phase 0, **implémenté en Phase 1** (`src/medvision_qa/validation.py`,
-`src/medvision_qa/alignment.py`), testé dans `tests/test_validation.py` et
-`tests/test_alignment.py`. Lecture avec le module standard `csv` (pas pandas), pour
-éviter toute conversion implicite.
+[日本語](ja/data_format.md)
 
-« Ligne » désigne la ligne physique du fichier (1 = en-tête). Elle peut différer du
-numéro d'enregistrement si un champ entre guillemets contient un saut de ligne.
+Status: defined in Phase 0, **implemented in Phase 1** (`src/medvision_qa/validation.py`,
+`src/medvision_qa/alignment.py`), tested in `tests/test_validation.py` and
+`tests/test_alignment.py`. Files are read with the standard `csv` module (not pandas),
+to avoid any implicit conversion.
 
-Principe général : **toute violation est une erreur bloquante.** Aucune ligne n'est
-supprimée, aucune valeur n'est corrigée, normalisée ou remplacée silencieusement.
+"Line" means the physical line of the file (1 = header). It can differ from the record
+number when a quoted field contains a line break.
+
+General principle: **every violation is a blocking error.** No row is removed and no
+value is corrected, normalised or replaced silently.
 
 ---
 
-## 1. Règles communes à tous les CSV
+## 1. Rules common to every CSV
 
-| Règle | Comportement |
+| Rule | Behaviour |
 |---|---|
-| Encodage | UTF-8, avec ou sans BOM (Excel ajoute un BOM). Autre encodage → erreur. |
-| Séparateur | Virgule `,`. Guillemets selon RFC 4180. |
-| En-tête | Obligatoire, première ligne. |
-| Noms de colonnes dupliqués | Erreur. |
-| Colonnes inconnues | Erreur, sauf si elles commencent par `meta_` (conservées, jamais utilisées dans les calculs). |
-| Ligne vide ou nombre de champs incorrect | Erreur avec numéro de ligne. |
-| Espaces en début/fin de valeur | Erreur (pas de `strip()` silencieux). |
-| Fichier sans ligne de données | Erreur. |
+| Encoding | UTF-8, with or without BOM (Excel adds a BOM). Any other encoding → error. |
+| Separator | Comma `,`. Quoting per RFC 4180. |
+| Header | Required, first line. |
+| Duplicate column names | Error. |
+| Unknown columns | Error, unless they start with `meta_` (kept, never used in calculations). |
+| Empty line or wrong number of fields | Error with line number. |
+| Leading/trailing spaces in a value | Error (no silent `strip()`). |
+| File without data rows | Error. |
 
-Chaque erreur indique : fichier, numéro de ligne (1 = en-tête), colonne, valeur fautive,
-règle violée.
+Each error gives: file, line number (1 = header), column, offending value, and the rule
+violated.
 
 ---
 
 ## 2. Classes
 
-Les classes sont déclarées dans la configuration d'évaluation
-([evaluation_config.md](evaluation_config.md)), **pas déduites des données**.
+Classes are declared in the evaluation configuration
+([evaluation_config.md](evaluation_config.md)), **not inferred from the data**.
 
-- Liste ordonnée, au moins 2 classes, sans doublon.
-- Noms : `^[A-Za-z0-9_-]+$`, sensibles à la casse (`Glioma` ≠ `glioma`).
-- L'ordre déclaré fixe l'ordre des lignes/colonnes de la matrice de confusion et
-  l'ordre attendu des colonnes de scores.
-- Une classe déclarée peut être absente des données : ce n'est pas une erreur de
-  format, mais les métriques qui en dépendent seront marquées **indéfinies** (Phase 1).
+- Ordered list, at least 2 classes, no duplicate.
+- Names: `^[A-Za-z0-9_-]+$`, case-sensitive (`Glioma` ≠ `glioma`).
+- The declared order fixes the row/column order of the confusion matrix and the expected
+  order of the score columns.
+- A declared class may be absent from the data: this is not a format error, but the
+  metrics that depend on it are marked **undefined** (Phase 1).
 
-Exemple pour le dataset IRM : `["glioma", "meningioma", "notumor", "pituitary"]`.
+Example for the MRI dataset: `["glioma", "meningioma", "notumor", "pituitary"]`.
 
-### Classes positives (tâche binaire dérivée)
+### Positive classes (derived binary task)
 
-`positive` est une liste non vide de classes déclarées, différente de l'ensemble complet
-des classes. Elle définit une tâche binaire « positives contre les autres » :
+`positive` is a non-empty list of declared classes, different from the full set of
+classes. It defines a binary "positives vs the rest" task:
 
-- vérité binaire : `true_label ∈ positive` ;
-- prédiction binaire : `predicted_label ∈ positive` (décision multiclasse existante,
-  sans nouveau seuil) ;
-- score binaire : somme des `score_<classe>` des classes positives (utilisé pour
-  l'AUROC uniquement).
+- binary truth: `true_label ∈ positive`;
+- binary prediction: `predicted_label ∈ positive` (existing multiclass decision, no new
+  threshold);
+- binary score: sum of the `score_<class>` of the positive classes (used for AUROC only).
 
-Exemple IRM, tumeur contre pas de tumeur : `positive = ["glioma", "meningioma", "pituitary"]`.
-Un contre tous : `positive = ["glioma"]`.
+MRI example, tumour vs no tumour: `positive = ["glioma", "meningioma", "pituitary"]`.
+One-vs-rest: `positive = ["glioma"]`.
 
 ---
 
-## 3. Fichier de vérité terrain (`ground_truth.csv`)
+## 3. Ground truth file (`ground_truth.csv`)
 
-Source unique des labels de référence, partagée par les versions A et B.
+Single source of the reference labels, shared by versions A and B.
 
-| Colonne | Obligatoire | Type | Règles |
+| Column | Required | Type | Rules |
 |---|---|---|---|
-| `case_id` | oui | texte | non vide, unique dans le fichier |
-| `true_label` | oui | texte | doit appartenir aux classes déclarées |
-| `patient_id` | non | texte | non vide si la colonne existe ; plusieurs cas peuvent partager un patient |
-| `meta_*` | non | texte | ignoré par les calculs |
+| `case_id` | yes | text | not empty, unique in the file |
+| `true_label` | yes | text | must be one of the declared classes |
+| `patient_id` | no | text | not empty if the column exists; several cases may share a patient |
+| `meta_*` | no | text | ignored by calculations |
 
-Sans `patient_id`, toute inférence est **au niveau image/cas**, et le rapport le dira.
-Avec `patient_id`, la Phase 1 pourra rééchantillonner par patient (bootstrap par grappes).
+Without `patient_id`, every inference is **at image/case level**, and the report says so.
+With `patient_id`, resampling is done by patient (cluster bootstrap).
 
 ```csv
 case_id,true_label,patient_id
@@ -83,30 +84,29 @@ img_0002,notumor,P002
 
 ---
 
-## 4. Fichier de prédictions (un par version)
+## 4. Predictions file (one per version)
 
-| Colonne | Obligatoire | Type | Règles |
+| Column | Required | Type | Rules |
 |---|---|---|---|
-| `case_id` | oui | texte | non vide, unique dans le fichier |
-| `predicted_label` | oui | texte | doit appartenir aux classes déclarées |
-| `score_<classe>` | non, mais **tout ou rien** | réel | une colonne par classe déclarée, aucune en plus |
-| `true_label` | non | texte | voir § 5 |
-| `meta_*` | non | texte | ignoré par les calculs |
+| `case_id` | yes | text | not empty, unique in the file |
+| `predicted_label` | yes | text | must be one of the declared classes |
+| `score_<class>` | no, but **all or nothing** | real | one column per declared class, none extra |
+| `true_label` | no | text | see § 5 |
+| `meta_*` | no | text | ignored by calculations |
 
-### Règles sur les scores
+### Rules on scores
 
-Si au moins une colonne `score_*` est présente :
+If at least one `score_*` column is present:
 
-1. il doit y en avoir exactement une par classe déclarée (ni manquante, ni en trop) ;
-2. chaque valeur est un réel fini dans `[0, 1]` (`nan`, `inf`, vide → erreur) ;
-3. la somme par ligne vaut 1 à une tolérance près (défaut `1e-3`, configurable et
-   reportée dans le rapport) — les scores doivent donc être des sorties de type softmax ;
-4. `predicted_label` doit être une des classes de score maximal (argmax ; en cas
-   d'égalité, n'importe laquelle des classes ex æquo est acceptée). Une incohérence est
-   une erreur. La v0.1 ne prend pas en charge les règles de décision par seuil.
+1. there must be exactly one per declared class (none missing, none extra);
+2. each value is a finite real in `[0, 1]` (`nan`, `inf`, empty → error);
+3. each row sums to 1 within a tolerance (default `1e-3`, configurable and reported in
+   the report), so the scores must be softmax-like outputs;
+4. `predicted_label` must be one of the classes with the highest score (argmax; on a tie,
+   any of the tied classes is accepted). An inconsistency is an error. v0.1 does not
+   support threshold-based decision rules.
 
-Sans scores, les métriques fondées sur les scores (AUROC) seront **indisponibles**, pas
-estimées.
+Without scores, score-based metrics (AUROC) are **unavailable**, not estimated.
 
 ```csv
 case_id,predicted_label,score_glioma,score_meningioma,score_notumor,score_pituitary
@@ -116,36 +116,35 @@ img_0002,notumor,0.03,0.10,0.80,0.07
 
 ---
 
-## 5. Où se trouvent les vérités terrain
+## 5. Where the ground truth lives
 
-Deux modes, exclusifs et explicites dans la configuration :
+Two modes, mutually exclusive and explicit in the configuration:
 
-- **Mode `separate_file` (recommandé)** : un `ground_truth.csv`. Si un fichier de
-  prédictions contient aussi `true_label`, chaque valeur doit être identique à celle du
-  fichier de vérité terrain, sinon erreur.
-- **Mode `embedded`** : pas de fichier séparé ; chaque fichier de prédictions contient
-  `true_label`. En comparaison A/B, `true_label` doit être identique dans A et B pour
-  chaque `case_id`, sinon erreur. `patient_id` n'est pas disponible dans ce mode.
-
----
-
-## 6. Alignement des cas
-
-- L'alignement se fait **uniquement par `case_id`**, en égalité exacte de chaîne.
-  L'ordre des lignes n'a aucune importance.
-- Deux fichiers ne sont jamais appariés par position ou par nombre de lignes.
-- Les ensembles de `case_id` de la vérité terrain, de A et de B doivent être
-  **identiques**. Tout cas manquant ou en trop → erreur, avec la liste des identifiants
-  concernés (tronquée à l'affichage, complète dans le journal de validation).
-- Il n'existe pas de mode « intersection » qui écarterait les cas non communs. Si une
-  sous-sélection est nécessaire, elle doit être faite en amont, et documentée.
+- **`separate_file` mode (recommended)**: one `ground_truth.csv`. If a predictions file
+  also contains `true_label`, every value must equal the one in the ground truth file,
+  otherwise error.
+- **`embedded` mode**: no separate file; every predictions file contains `true_label`.
+  In an A/B comparison, `true_label` must be identical in A and B for each `case_id`,
+  otherwise error. `patient_id` is not available in this mode.
 
 ---
 
-## 7. Limites connues du format v0.1
+## 6. Case alignment
 
-- Classification mono-label uniquement (pas de multi-label, pas de segmentation).
-- Pas de scores binaires à une seule colonne : en binaire, fournir les deux colonnes.
-- Le format ne peut pas vérifier que les `case_id` désignent réellement les mêmes images
-  pour A et B ; il vérifie seulement la cohérence des identifiants. Le hash du manifeste
-  de données (Phase 3) sert à tracer ce point.
+- Alignment is done **only on `case_id`**, by exact string equality. Row order does not
+  matter.
+- Two files are never paired by position or by row count.
+- The sets of `case_id` in the ground truth, A and B must be **identical**. Any missing or
+  extra case → error, with the list of identifiers concerned.
+- There is no "intersection" mode that would drop the cases not shared. If a subset is
+  needed, it must be selected upstream and documented.
+
+---
+
+## 7. Known limits of the v0.1 format
+
+- Single-label classification only (no multi-label, no segmentation).
+- No single-column binary scores: for a binary task, provide both columns.
+- The format cannot check that the `case_id` values really refer to the same images for
+  A and B; it only checks that the identifiers are consistent. The data manifest hash
+  (`data.manifest_sha256`) is there to trace this.

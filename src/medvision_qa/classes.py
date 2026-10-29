@@ -1,21 +1,30 @@
-"""Déclaration des classes et de la tâche binaire dérivée (docs/data_format.md § 2)."""
+"""Class declaration and derived binary task (docs/data_format.md § 2)."""
 
 import re
 from dataclasses import dataclass
+
+from medvision_qa.i18n import Text, msg, raw
 
 CLASS_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 class ConfigError(ValueError):
-    """Paramètre fourni par l'utilisateur invalide (classes, options statistiques...)."""
+    """Invalid user-supplied setting (classes, statistical options...).
+
+    ``text`` holds the message so it can be rendered in any supported language.
+    """
+
+    def __init__(self, text: Text | str):
+        self.text = text if isinstance(text, Text) else raw(text)
+        super().__init__(str(self.text))
 
 
 @dataclass(frozen=True)
 class ClassSpec:
-    """Classes déclarées, dans l'ordre qui fixe la matrice de confusion et les scores.
+    """Declared classes, in the order that fixes the confusion matrix and the scores.
 
-    ``positive`` : classes positives de la tâche binaire dérivée (vide = pas de tâche
-    binaire ; sensibilité, spécificité et AUROC seront alors indéfinies).
+    ``positive``: positive classes of the derived binary task (empty = no binary task;
+    sensitivity, specificity and AUROC are then undefined).
     """
 
     order: tuple[str, ...]
@@ -23,31 +32,28 @@ class ClassSpec:
 
     def __post_init__(self):
         if isinstance(self.order, str):
-            raise ConfigError("`order` doit être une liste de classes, pas une chaîne.")
+            raise ConfigError(msg("cfg.order_not_list"))
         if isinstance(self.positive, str):
-            raise ConfigError("`positive` doit être une liste de classes, pas une chaîne : "
-                              f'écrire ["{self.positive}"].')
+            raise ConfigError(msg("cfg.positive_is_string", value=self.positive))
         object.__setattr__(self, "order", tuple(self.order))
         object.__setattr__(self, "positive", tuple(self.positive))
 
         if len(self.order) < 2:
-            raise ConfigError("Au moins 2 classes doivent être déclarées.")
+            raise ConfigError(msg("cfg.too_few_classes"))
         for name in self.order:
             if not isinstance(name, str) or not CLASS_NAME_PATTERN.fullmatch(name):
-                raise ConfigError(f"Nom de classe invalide : {name!r} "
-                                  "(caractères autorisés : lettres, chiffres, _ et -).")
+                raise ConfigError(msg("cfg.class_name_invalid", name=repr(name)))
         duplicates = sorted({c for c in self.order if self.order.count(c) > 1})
         if duplicates:
-            raise ConfigError(f"Classes déclarées plusieurs fois : {duplicates}.")
+            raise ConfigError(msg("cfg.class_duplicates", names=str(duplicates)))
 
         unknown = [c for c in self.positive if c not in self.order]
         if unknown:
-            raise ConfigError(f"Classes positives non déclarées : {unknown}.")
+            raise ConfigError(msg("cfg.positive_undeclared", names=str(unknown)))
         if len(set(self.positive)) != len(self.positive):
-            raise ConfigError("Classe positive déclarée plusieurs fois.")
+            raise ConfigError(msg("cfg.positive_duplicate"))
         if self.positive and set(self.positive) == set(self.order):
-            raise ConfigError("Les classes positives ne peuvent pas être toutes les classes : "
-                              "la tâche binaire n'aurait pas de classe négative.")
+            raise ConfigError(msg("cfg.positive_all"))
 
     @property
     def index(self) -> dict[str, int]:

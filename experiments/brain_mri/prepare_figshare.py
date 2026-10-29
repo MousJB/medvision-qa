@@ -1,10 +1,10 @@
-"""Prépare le dataset figshare : extraction, conversion .mat → PNG, manifeste, séparation
-par patient, audit des doublons (voir PROTOCOL.md).
+"""Prepares the figshare dataset: extraction, .mat → PNG conversion, manifest, patient-level
+split, duplicate audit (see PROTOCOL.md).
 
-Lecture des .mat : uniquement les champs de données (label, PID, image), via h5py pour le
-format MATLAB v7.3 ou scipy.io.loadmat sinon. Aucun code n'est exécuté.
+Reading the .mat files: data fields only (label, PID, image), with h5py for the MATLAB
+v7.3 format or scipy.io.loadmat otherwise. No code is executed.
 
-    python experiments/brain_mri/prepare_figshare.py   # lit data/figshare, écrit data/figshare/png
+    python experiments/brain_mri/prepare_figshare.py   # reads data/figshare, writes data/figshare/png
 """
 
 import csv
@@ -25,22 +25,22 @@ ROOT = Path(__file__).resolve().parents[2]
 
 SEED = 20261029
 LABELS = {1: "meningioma", 2: "glioma", 3: "pituitary"}
-SPLIT_FRACTIONS = (("train", 0.6), ("val", 0.1))  # le reste : test
+SPLIT_FRACTIONS = (("train", 0.6), ("val", 0.1))  # the rest: test
 NEAR_DUPLICATE_DISTANCE = 4
-# Les PID « MR<nombre><lettre> » partageant une racine désignent très probablement le même
-# patient (inspection visuelle, voir README.md) : on les regroupe pour la séparation.
+# PIDs "MR<number><letter>" sharing a root very probably denote the same patient (visual
+# inspection, see README.md): they are grouped for the split.
 PID_FAMILY = re.compile(r"^(MR\d+)[A-Z]$")
 DATA = ROOT / "data" / "figshare"
 EVAL_DIR = Path(__file__).resolve().parent / "figshare_eval"
 
 
 def safe_extract(archive: Path, target: Path) -> None:
-    """Extraction en refusant tout membre qui sortirait du dossier cible."""
+    """Extraction that refuses any member that would leave the target folder."""
     with zipfile.ZipFile(archive) as z:
         for member in z.namelist():
             destination = (target / member).resolve()
             if not destination.is_relative_to(target.resolve()):
-                raise ValueError(f"membre d'archive refusé : {member!r}")
+                raise ValueError(f"archive member refused: {member!r}")
         z.extractall(target)
 
 
@@ -50,7 +50,7 @@ def read_mat(path: Path) -> tuple[int, str, np.ndarray]:
             cj = f["cjdata"]
             label = int(np.asarray(cj["label"]).ravel()[0])
             pid = "".join(chr(int(c)) for c in np.asarray(cj["PID"]).ravel())
-            image = np.asarray(cj["image"]).T  # ordre colonne de MATLAB → ligne
+            image = np.asarray(cj["image"]).T  # MATLAB column-major order → row-major
         return label, pid, image
     from scipy.io import loadmat
     cj = loadmat(path, squeeze_me=True, struct_as_record=False)["cjdata"]
@@ -58,7 +58,7 @@ def read_mat(path: Path) -> tuple[int, str, np.ndarray]:
 
 
 def to_uint8(image: np.ndarray) -> np.ndarray:
-    """Min-max par image vers [0, 255], comme le code MATLAB du README figshare."""
+    """Per-image min-max to [0, 255], like the MATLAB code of the figshare README."""
     im = image.astype(np.float64)
     lo, hi = im.min(), im.max()
     if hi == lo:
@@ -112,7 +112,7 @@ def main() -> None:
                      "patient_group": patient_group(pid), "pixel_sha256": pixel_digests[-1],
                      "png_path": out.relative_to(DATA).as_posix()})
 
-    # Cohérence patient → classe (patient = groupe de PID)
+    # Patient → class consistency (patient = PID group)
     labels_by_patient = defaultdict(set)
     families = defaultdict(set)
     for r in rows:
@@ -125,7 +125,7 @@ def main() -> None:
     for r in rows:
         r["split"] = split.get(r["patient_group"], "excluded")
 
-    # Manifeste (identifiants, hashes, séparation) : versionné, sans image
+    # Manifest (identifiers, hashes, split): versioned, no image
     EVAL_DIR.mkdir(exist_ok=True)
     manifest = EVAL_DIR / "manifest.csv"
     fields = ["case_id", "source_file", "patient_id", "patient_group", "label", "split", "height", "width", "pixel_sha256"]
@@ -142,7 +142,7 @@ def main() -> None:
             if r["split"] == "test":
                 writer.writerow([r["case_id"], r["label"], r["patient_group"]])
 
-    # Audit des doublons : exacts (pixels) et quasi-doublons entre jeux
+    # Duplicate audit: exact (pixels) and near-duplicates between sets
     exact = exact_duplicate_groups(pixel_digests)
     near = near_duplicate_pairs(hashes, max_distance=NEAR_DUPLICATE_DISTANCE)
     cross = [(i, j, d) for i, j, d in near if rows[i]["split"] != rows[j]["split"]]
@@ -171,9 +171,9 @@ def main() -> None:
     for key in ("n_images", "n_patients", "patients_with_several_labels", "images_per_split", "patients_per_split",
                 "image_sizes", "near_duplicate_pairs_total", "manifest_sha256"):
         print(f"{key}: {audit[key]}")
-    print("groupes de doublons exacts :", len(exact))
-    print("quasi-doublons entre patients différents :", len(cross_patient))
-    print("quasi-doublons entre jeux différents :", len(cross))
+    print("exact duplicate groups:", len(exact))
+    print("near-duplicates between different patients:", len(cross_patient))
+    print("near-duplicates between different sets:", len(cross))
 
 
 if __name__ == "__main__":

@@ -1,106 +1,103 @@
-# Phase 0 — Inspection et cadrage
+# Phase 0 — Inspection and scoping
 
-Date : 2026-10-29
+[日本語](ja/phase0_inspection.md)
 
-## 1. Environnement local
+Date: 2026-10-29
 
-| Élément | Constat |
+## 1. Local environment
+
+| Item | Finding |
 |---|---|
 | OS | Windows 10 Home 10.0.19045 |
-| Python | 3.12.6 (`C:\Python312`) ; environnement virtuel `.venv/` du projet |
-| Dépendances installées | numpy 2.5.4, scipy 1.18.1, scikit-learn 1.9.1, pytest 9.2.0. Versions exactes dans `requirements-lock.txt` |
-| git | 2.44.0 ; dépôt initialisé sur `main`, aucun commit à ce stade |
-| R / pROC | **absent** : pas de validation indépendante de DeLong pour l'instant (voir § 4) |
-| GPU | CUDA 12.3 présent dans le PATH ; non vérifié et non nécessaire avant la Phase 4 |
+| Python | 3.12.6 (`C:\Python312`); project virtual environment `.venv/` |
+| Installed dependencies | numpy 2.5.4, scipy 1.18.1, scikit-learn 1.9.1, pytest 9.2.0. Exact versions in `requirements-lock.txt` |
+| git | 2.44.0; repository initialised on `main`, no commit at this stage |
+| R / pROC | **absent**: no independent validation of DeLong for now (see § 4) |
+| GPU | CUDA 12.3 present in the PATH; not checked and not needed before Phase 4 |
 
-## 2. Dépôt candidat : `MousJB/brain-tumor-mri-classification`
+## 2. Candidate repository: `MousJB/brain-tumor-mri-classification`
 
-Inspecté via l'API GitHub (lecture seule, aucun clonage, aucune donnée téléchargée).
+Inspected through the GitHub API (read-only, no cloning, no data downloaded).
 
-| Élément | Constat |
+| Item | Finding |
 |---|---|
-| Licence du code | MIT |
-| Contenu | `src/dataset.py`, `src/models.py`, `src/utils.py`, `README.md`, `requirements.txt` |
-| Notebook | `notebooks/Brain_Tumor_Classification.ipynb` est **vide** (2 octets) |
-| Checkpoints / prédictions | **aucun** dans le dépôt |
-| Classes | glioma, meningioma, no-tumor, pituitary. L'ordre des indices dépend de la liste `classes` passée au `Dataset`, qui n'est pas fixée dans le code versionné |
+| Code licence | MIT |
+| Content | `src/dataset.py`, `src/models.py`, `src/utils.py`, `README.md`, `requirements.txt` |
+| Notebook | `notebooks/Brain_Tumor_Classification.ipynb` is **empty** (2 bytes) |
+| Checkpoints / predictions | **none** in the repository |
+| Classes | glioma, meningioma, no-tumor, pituitary. The index order depends on the `classes` list passed to the `Dataset`, which is not fixed in the versioned code |
 
-### Conséquences
+### Consequences
 
-- Les résultats du README (94,58 %, 98,09 %, etc.) **ne sont pas reproductibles depuis le
-  dépôt** : le notebook qui les a produits est vide et aucun poids n'est versionné. Ils ne
-  doivent pas être repris comme résultats de référence par MedVision QA.
-- Le README parle de « validation accuracy » alors que le dataset n'a que des dossiers
-  `Training/` et `Testing/`. L'origine du jeu de validation n'est pas documentée. À
-  éclaircir avant toute réutilisation (Phase 4).
-- `evaluate_model` ne conserve que l'argmax : il ne produit **pas de scores**. Pour
-  l'AUROC, il faudra exporter les probabilités softmax au format défini dans
+- The README results (94.58%, 98.09%, etc.) **cannot be reproduced from the repository**:
+  the notebook that produced them is empty and no weights are versioned. They must not
+  be used as reference results by MedVision QA.
+- The README mentions a "validation accuracy" whereas the dataset only has `Training/`
+  and `Testing/` folders. Where the validation set comes from is not documented. To be
+  clarified before any reuse (Phase 4).
+- `evaluate_model` keeps only the argmax: it produces **no scores**. For AUROC, the
+  softmax probabilities have to be exported in the format defined in
   [data_format.md](data_format.md).
-- Observation sur le prétraitement, à vérifier en Phase 4 et non corrigée ici : après une
-  standardisation z-score, l'image est encore divisée par 255, ce qui semble
-  involontaire.
+- Observation on preprocessing, to check in Phase 4 and not fixed here: after a z-score
+  standardisation, the image is still divided by 255, which looks unintended.
 
-## 3. Dataset : Kaggle « MRI Brain Tumor Dataset: 4-Class (7,023 Images) »
+## 3. Dataset: Kaggle "MRI Brain Tumor Dataset: 4-Class (7,023 Images)"
 
-Métadonnées lues via l'API publique Kaggle
+Metadata read through the public Kaggle API
 (`mohamadabouali1/mri-brain-tumor-dataset-4-class-7023-images`, version 1).
 
-| Élément | Constat |
+| Item | Finding |
 |---|---|
-| Licence déclarée sur Kaggle | MIT |
-| Auteur | Mohamad Abou Ali |
-| Taille | ~139 Mo |
-| Jeux « Blurred », « Noisy », « Patient Motion Artifact » | décrits par l'auteur comme **synthétiques** |
+| Licence declared on Kaggle | MIT |
+| Author | Mohamad Abou Ali |
+| Size | ~139 MB |
+| "Blurred", "Noisy", "Patient Motion Artifact" sets | described by the author as **synthetic** |
 
-### Points non vérifiés
+### Unverified points
 
-- **Provenance amont des images** : la description Kaggle ne précise pas l'origine des
-  7 023 images. Si elles proviennent de jeux publics antérieurs, la licence MIT déclarée
-  ne garantit pas les droits d'origine. À vérifier, par exemple sur le dépôt GitHub
-  cité par l'auteur et dans ses articles, avant toute démonstration publique.
-- Doublons exacts et quasi-doublons entre `Training/` et `Testing/` : non examinés
+- **Upstream provenance of the images**: the Kaggle description does not say where the
+  7,023 images come from. If they come from earlier public datasets, the declared MIT
+  licence does not guarantee the original rights. To check, for example on the GitHub
+  repository cited by the author and in their papers, before any public demonstration.
+- Exact duplicates and near-duplicates between `Training/` and `Testing/`: not examined
   (Phase 4).
-- Absence d'identifiant patient : probable, à confirmer. Sans `patient_id`, toute
-  inférence restera au niveau image.
+- No patient identifier: likely, to be confirmed. Without `patient_id`, any inference
+  stays at image level.
 
-### Conséquence pour le rapport
+### Consequence for the report
 
-Les résultats sur Blurred, Noisy et Motion devront être présentés comme des **tests de
-sensibilité sur données synthétiques**, pas comme une validation en conditions réelles
-d'acquisition.
+Results on Blurred, Noisy and Motion must be presented as **sensitivity tests on
+synthetic data**, not as a validation under real acquisition conditions.
 
 ## 4. DeLong
 
-R n'est pas installé. Selon la section 7 de la spécification, cela ne bloque pas la
-Phase 1. Décision (§ 6) : bootstrap apparié en Phase 2, DeLong marqué « non implémenté ».
+R is not installed. Per section 7 of the specification, this does not block Phase 1.
+Decision (§ 6): paired bootstrap in Phase 2, DeLong marked "not implemented".
 
-## 5. Décisions de Phase 0
+## 5. Phase 0 decisions
 
-| Sujet | Décision |
+| Topic | Decision |
 |---|---|
-| Format des entrées | [data_format.md](data_format.md) : vérité terrain séparée (recommandé), un CSV de prédictions par version, alignement strict par `case_id` |
-| Configuration et critères | [evaluation_config.md](evaluation_config.md) : TOML, critères décidés sur IC, agrégation sans moyenne |
-| Arborescence | `src/medvision_qa/` (package installable) au lieu de `app/` (spec § 11, indicative) : nom non générique, imports identiques en tests et en production. Modules créés phase par phase, aucun module vide |
-| Dépendances | uniquement ce qu'utilisent les phases 1 et 2 (numpy, scipy, scikit-learn) ; FastAPI, Jinja2 et SQLite seront ajoutés en Phase 3/5 |
-| Lecture CSV | prévue avec le module standard `csv` plutôt que pandas, pour éviter les conversions implicites (`"NA"` → NaN, inférence de types). À confirmer en Phase 1 |
+| Input format | [data_format.md](data_format.md): separate ground truth (recommended), one predictions CSV per version, strict alignment on `case_id` |
+| Configuration and criteria | [evaluation_config.md](evaluation_config.md): TOML, criteria decided on CIs, aggregation without averaging |
+| Layout | `src/medvision_qa/` (installable package) instead of `app/` (spec § 11, indicative): non-generic name, identical imports in tests and in production. Modules created phase by phase, no empty module |
+| Dependencies | only what Phases 1 and 2 use (numpy, scipy, scikit-learn); FastAPI, Jinja2 and SQLite added in Phase 3/5 |
+| CSV reading | planned with the standard `csv` module rather than pandas, to avoid implicit conversions (`"NA"` → NaN, type inference). To confirm in Phase 1 |
 
-## 6. Questions tranchées en fin de Phase 0
+## 6. Questions settled at the end of Phase 0
 
-| Question | Décision | Raison |
+| Question | Decision | Reason |
 |---|---|---|
-| Licence | MIT (`LICENSE`) | cohérente avec le dépôt IRM ; simple pour un portfolio |
-| Classe positive | `positive` = **liste** de classes ; démo IRM : tumeur (`glioma`, `meningioma`, `pituitary`) contre `notumor` | question clinique la plus naturelle pour ce dataset ; le un-contre-tous reste possible avec une liste d'une seule classe |
-| Règle de décision par seuil | non prise en charge en v0.1 : `predicted_label` doit être l'argmax | moins de cas ambigus ; ajout possible plus tard si un besoin réel apparaît |
-| DeLong | non implémenté ; comparaison d'AUROC par bootstrap apparié en Phase 2 | aucune référence indépendante disponible (R absent) ; pas de méthode non validée exposée |
+| Licence | MIT (`LICENSE`) | consistent with the MRI repository; simple for a portfolio |
+| Positive class | `positive` = **list** of classes; MRI demo: tumour (`glioma`, `meningioma`, `pituitary`) vs `notumor` | the most natural clinical question for this dataset; one-vs-rest stays possible with a one-class list |
+| Threshold decision rule | not supported in v0.1: `predicted_label` must be the argmax | fewer ambiguous cases; can be added later if a real need appears |
+| DeLong | not implemented; AUROC compared by paired bootstrap in Phase 2 | no independent reference available (R absent); no unvalidated method exposed |
 
-Reste ouvert : le dossier s'appelle toujours `projet IA`. Le renommer en `medvision-qa`
-quand VS Code est fermé.
+## 7. Phase 0 gate
 
-## 7. Gate de Phase 0
-
-| Condition | État |
+| Condition | State |
 |---|---|
-| Schéma et périmètre documentés | fait : `docs/data_format.md`, `docs/evaluation_config.md` |
-| Environnement reproductible | `.venv` + `pyproject.toml` + `requirements-lock.txt` |
-| Tests de base exécutables | `pytest` : 3 passed (2026-10-29) |
-| Licences et droits des données | licence déclarée identifiée ; **provenance amont non vérifiée**. Ce point ne bloque pas les phases 1 à 3, qui utilisent des fixtures synthétiques, mais bloque la Phase 4 |
+| Schema and scope documented | done: `docs/data_format.md`, `docs/evaluation_config.md` |
+| Reproducible environment | `.venv` + `pyproject.toml` + `requirements-lock.txt` |
+| Basic tests runnable | `pytest`: 3 passed (2026-10-29) |
+| Data licences and rights | declared licence identified; **upstream provenance not verified**. This does not block Phases 1 to 3, which use synthetic fixtures, but blocks Phase 4 |

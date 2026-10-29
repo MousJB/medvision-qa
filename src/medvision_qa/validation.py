@@ -1,7 +1,7 @@
-"""Lecture et validation stricte des CSV d'entrée (docs/data_format.md).
+"""Reading and strict validation of the input CSV files (docs/data_format.md).
 
-Toute violation est collectée puis levée sous forme de ``ValidationError``. Aucune ligne
-n'est supprimée et aucune valeur n'est corrigée, normalisée ou remplacée.
+Every violation is collected, then raised as a ``ValidationError``. No row is removed
+and no value is corrected, normalised or replaced.
 """
 
 import csv
@@ -13,44 +13,48 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from medvision_qa.classes import ClassSpec
+from medvision_qa.i18n import DEFAULT_LANGUAGE, Text, msg, t
 
 META_PREFIX = "meta_"
 SCORE_PREFIX = "score_"
-# Nombre décimal simple : refuse ce que float() accepte en plus ("nan", "inf", "1_000").
+# Plain decimal number: rejects what float() accepts on top of it ("nan", "inf", "1_000").
 DECIMAL_PATTERN = re.compile(r"^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$")
 MAX_ISSUES_IN_MESSAGE = 20
 
 
 @dataclass(frozen=True)
 class ValidationIssue:
-    """Une violation. ``line`` : ligne physique du fichier (1 = en-tête)."""
+    """One violation. ``line``: physical line of the file (1 = header)."""
 
     file: str
     rule: str
-    message: str
+    message: Text
     line: int | None = None
     column: str | None = None
     value: str | None = None
 
-    def __str__(self):
+    def render(self, lang: str = DEFAULT_LANGUAGE) -> str:
         where = self.file
         if self.line is not None:
-            where += f", ligne {self.line}"
+            where += ", " + t("issue.line", lang, line=self.line)
         if self.column is not None:
-            where += f", colonne {self.column!r}"
-        value = f" (valeur : {self.value!r})" if self.value is not None else ""
-        return f"[{self.rule}] {where} : {self.message}{value}"
+            where += ", " + t("issue.column", lang, column=repr(self.column))
+        value = t("issue.value", lang, value=repr(self.value)) if self.value is not None else ""
+        return f"[{self.rule}] {where}: {self.message.render(lang)}{value}"
+
+    def __str__(self):
+        return self.render()
 
 
 class ValidationError(Exception):
-    """Données invalides. ``issues`` contient la liste complète des violations."""
+    """Invalid data. ``issues`` holds the complete list of violations."""
 
     def __init__(self, issues):
         self.issues = tuple(issues)
         shown = "\n".join(f"  - {issue}" for issue in self.issues[:MAX_ISSUES_IN_MESSAGE])
         hidden = len(self.issues) - MAX_ISSUES_IN_MESSAGE
-        more = f"\n  ... et {hidden} autre(s) problème(s)" if hidden > 0 else ""
-        super().__init__(f"{len(self.issues)} problème(s) de validation :\n{shown}{more}")
+        more = f"\n  ... and {hidden} more issue(s)" if hidden > 0 else ""
+        super().__init__(f"{len(self.issues)} validation issue(s):\n{shown}{more}")
 
 
 @dataclass(frozen=True)
@@ -72,7 +76,7 @@ class GroundTruth:
 class Predictions:
     source: SourceInfo
     predicted: dict[str, str]
-    scores: dict[str, tuple[float, ...]] | None  # dans l'ordre de ClassSpec.order
+    scores: dict[str, tuple[float, ...]] | None  # in ClassSpec.order
     true_labels: dict[str, str] | None
 
 
@@ -85,15 +89,14 @@ COMMON_CHECKS = (
 
 
 def _read_rows(path: Path, issues: list[ValidationIssue]):
-    """Retourne (sha256, en-tête, [(numéro de ligne, champs)]) ou None si illisible."""
+    """Returns (sha256, header, [(line number, fields)]), or None if unreadable."""
     name = str(path)
     raw = path.read_bytes()
     sha256 = hashlib.sha256(raw).hexdigest()
     try:
         text = raw.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
-        issues.append(ValidationIssue(name, "encoding_utf8",
-                                      f"le fichier n'est pas en UTF-8 (octet {exc.start})"))
+        issues.append(ValidationIssue(name, "encoding_utf8", msg("val.not_utf8", offset=exc.start)))
         return None
 
     reader = csv.reader(io.StringIO(text, newline=""), strict=True)
@@ -102,12 +105,12 @@ def _read_rows(path: Path, issues: list[ValidationIssue]):
         for fields in reader:
             rows.append((reader.line_num, fields))
     except csv.Error as exc:
-        issues.append(ValidationIssue(name, "csv_syntax", f"CSV mal formé : {exc}",
+        issues.append(ValidationIssue(name, "csv_syntax", msg("val.csv_malformed", error=str(exc)),
                                       line=reader.line_num))
         return None
 
     if not rows or rows[0][1] == []:
-        issues.append(ValidationIssue(name, "header_present", "en-tête absent", line=1))
+        issues.append(ValidationIssue(name, "header_present", msg("val.header_missing"), line=1))
         return None
     header = rows[0][1]
     return sha256, header, rows[1:]
@@ -116,49 +119,46 @@ def _read_rows(path: Path, issues: list[ValidationIssue]):
 def _check_header(name, header, required, optional, issues):
     for col in header:
         if col != col.strip():
-            issues.append(ValidationIssue(name, "no_surrounding_whitespace",
-                                          "espace en début ou fin de nom de colonne",
+            issues.append(ValidationIssue(name, "no_surrounding_whitespace", msg("val.column_whitespace"),
                                           line=1, value=col))
     duplicates = sorted({c for c in header if header.count(c) > 1})
     for col in duplicates:
-        issues.append(ValidationIssue(name, "no_duplicate_columns", "colonne dupliquée",
+        issues.append(ValidationIssue(name, "no_duplicate_columns", msg("val.duplicate_column"),
                                       line=1, column=col))
     for col in required:
         if col not in header:
-            issues.append(ValidationIssue(name, "required_columns", "colonne obligatoire absente",
+            issues.append(ValidationIssue(name, "required_columns", msg("val.required_column_missing"),
                                           line=1, column=col))
     allowed = set(required) | set(optional)
     for col in header:
         if col not in allowed and not col.startswith(META_PREFIX) and not col.startswith(SCORE_PREFIX):
-            issues.append(ValidationIssue(
-                name, "no_unknown_columns",
-                f"colonne inconnue ; préfixer par {META_PREFIX!r} pour la conserver sans l'utiliser",
-                line=1, column=col))
+            issues.append(ValidationIssue(name, "no_unknown_columns",
+                                          msg("val.unknown_column", prefix=repr(META_PREFIX)),
+                                          line=1, column=col))
 
 
 def _parse_records(name, header, rows, required_values, issues):
-    """Vérifie la structure ligne par ligne ; retourne [(ligne, {colonne: valeur})]."""
+    """Checks the structure row by row; returns [(line, {column: value})]."""
     records = []
     if not rows:
-        issues.append(ValidationIssue(name, "no_data_rows", "aucune ligne de données"))
+        issues.append(ValidationIssue(name, "no_data_rows", msg("val.no_data_rows")))
     for line, fields in rows:
         if fields == []:
-            issues.append(ValidationIssue(name, "no_empty_lines", "ligne vide", line=line))
+            issues.append(ValidationIssue(name, "no_empty_lines", msg("val.empty_line"), line=line))
             continue
         if len(fields) != len(header):
             issues.append(ValidationIssue(
-                name, "field_count",
-                f"{len(fields)} champ(s) au lieu de {len(header)}", line=line))
+                name, "field_count", msg("val.field_count", found=len(fields), expected=len(header)),
+                line=line))
             continue
         record = dict(zip(header, fields))
         for col, value in record.items():
             if value != value.strip():
-                issues.append(ValidationIssue(name, "no_surrounding_whitespace",
-                                              "espace en début ou fin de valeur",
+                issues.append(ValidationIssue(name, "no_surrounding_whitespace", msg("val.value_whitespace"),
                                               line=line, column=col, value=value))
         for col in required_values:
             if col in record and record[col] == "":
-                issues.append(ValidationIssue(name, "required_values_present", "valeur manquante",
+                issues.append(ValidationIssue(name, "required_values_present", msg("val.value_missing"),
                                               line=line, column=col))
         records.append((line, record))
     return records
@@ -172,7 +172,7 @@ def _check_unique_ids(name, records, issues):
             continue
         if case_id in first_seen:
             issues.append(ValidationIssue(
-                name, "unique_case_id", f"case_id déjà présent ligne {first_seen[case_id]}",
+                name, "unique_case_id", msg("val.duplicate_case_id", line=first_seen[case_id]),
                 line=line, column="case_id", value=case_id))
         else:
             first_seen[case_id] = line
@@ -181,8 +181,7 @@ def _check_unique_ids(name, records, issues):
 def _check_label(name, line, column, value, classes, issues):
     if value != "" and value not in classes.order:
         issues.append(ValidationIssue(
-            name, "labels_declared",
-            f"label non déclaré (classes : {list(classes.order)} ; sensible à la casse)",
+            name, "labels_declared", msg("val.label_undeclared", classes=str(list(classes.order))),
             line=line, column=column, value=value))
 
 
@@ -199,8 +198,7 @@ def load_ground_truth(path, classes: ClassSpec) -> GroundTruth:
     _check_header(name, header, required, ("patient_id",), issues)
     for col in header:
         if col.startswith(SCORE_PREFIX):
-            issues.append(ValidationIssue(name, "no_unknown_columns",
-                                          "colonne de score inattendue dans la vérité terrain",
+            issues.append(ValidationIssue(name, "no_unknown_columns", msg("val.unexpected_score_column"),
                                           line=1, column=col))
     has_patient = "patient_id" in header
     required_values = required + (("patient_id",) if has_patient else ())
@@ -222,17 +220,16 @@ def load_ground_truth(path, classes: ClassSpec) -> GroundTruth:
 
 def _parse_score(name, line, column, value, issues):
     if not DECIMAL_PATTERN.fullmatch(value):
-        issues.append(ValidationIssue(name, "score_numeric",
-                                      "score non numérique (format décimal attendu)",
+        issues.append(ValidationIssue(name, "score_numeric", msg("val.score_not_numeric"),
                                       line=line, column=column, value=value))
         return None
     score = float(value)
     if not math.isfinite(score):
-        issues.append(ValidationIssue(name, "score_finite", "score non fini",
+        issues.append(ValidationIssue(name, "score_finite", msg("val.score_not_finite"),
                                       line=line, column=column, value=value))
         return None
     if not 0.0 <= score <= 1.0:
-        issues.append(ValidationIssue(name, "score_in_bounds", "score hors de [0, 1]",
+        issues.append(ValidationIssue(name, "score_in_bounds", msg("val.score_out_of_bounds"),
                                       line=line, column=column, value=value))
         return None
     return score
@@ -241,7 +238,7 @@ def _parse_score(name, line, column, value, issues):
 def load_predictions(path, classes: ClassSpec, probability_sum_tolerance: float = 1e-3) -> Predictions:
     if not (isinstance(probability_sum_tolerance, (int, float))
             and math.isfinite(probability_sum_tolerance) and probability_sum_tolerance > 0):
-        raise ValueError("probability_sum_tolerance doit être un réel fini > 0.")
+        raise ValueError("probability_sum_tolerance must be a finite number > 0.")
     path = Path(path)
     name = str(path)
     issues: list[ValidationIssue] = []
@@ -258,16 +255,13 @@ def load_predictions(path, classes: ClassSpec, probability_sum_tolerance: float 
     if has_scores:
         for col in present_scores:
             if col not in classes.score_columns:
-                issues.append(ValidationIssue(name, "score_columns_complete",
-                                              "colonne de score pour une classe non déclarée",
+                issues.append(ValidationIssue(name, "score_columns_complete", msg("val.score_column_undeclared"),
                                               line=1, column=col))
         for col in classes.score_columns:
             if col not in header:
-                issues.append(ValidationIssue(
-                    name, "score_columns_complete",
-                    "colonne de score manquante (les scores sont « tout ou rien »)",
-                    line=1, column=col))
-    if issues:  # en-tête invalide : la lecture ligne à ligne n'aurait pas de sens
+                issues.append(ValidationIssue(name, "score_columns_complete", msg("val.score_column_missing"),
+                                              line=1, column=col))
+    if issues:  # invalid header: reading row by row would make no sense
         raise ValidationError(issues)
 
     has_true = "true_label" in header
@@ -292,16 +286,14 @@ def load_predictions(path, classes: ClassSpec, probability_sum_tolerance: float 
         if abs(total - 1.0) > probability_sum_tolerance:
             issues.append(ValidationIssue(
                 name, "score_sum_to_one",
-                f"somme des scores = {total!r}, écart à 1 > tolérance {probability_sum_tolerance}",
-                line=line))
+                msg("val.score_sum", total=repr(total), tolerance=probability_sum_tolerance), line=line))
             continue
         if predicted in classes.order:
             best = max(row)
             argmax = [c for c, s in zip(classes.order, row) if s == best]
             if predicted not in argmax:
                 issues.append(ValidationIssue(
-                    name, "predicted_is_argmax",
-                    f"predicted_label n'est pas la classe de score maximal ({argmax})",
+                    name, "predicted_is_argmax", msg("val.not_argmax", argmax=str(argmax)),
                     line=line, column="predicted_label", value=predicted))
         scores[record["case_id"]] = tuple(row)
 

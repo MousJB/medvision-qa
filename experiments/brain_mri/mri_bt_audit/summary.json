@@ -21,16 +21,16 @@
   "exact_file_duplicate_groups": 300,
   "exact_pixel_duplicate_groups": 300,
   "exact_pixel_duplicate_pairs_by_location": {
-    "dans Testing": 30,
+    "within Testing": 30,
     "Testing ↔ Training": 263,
-    "dans Training": 133
+    "within Training": 133
   },
   "near_duplicate_threshold": 4,
   "near_duplicate_pairs_total": 6450,
   "near_duplicate_pairs_by_location": {
-    "dans Testing": 278,
+    "within Testing": 278,
     "Testing ↔ Training": 2250,
-    "dans Training": 3922
+    "within Training": 3922
   },
   "near_duplicate_pairs_with_different_labels": 50,
   "provenance_vs_figshare": {

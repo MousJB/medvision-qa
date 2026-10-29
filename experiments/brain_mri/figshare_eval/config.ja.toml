@@ -1,0 +1,65 @@
+# 実 MRI データ（figshare、Jun Cheng、CC BY 4.0）を用いた MedVision QA 評価。
+#
+# config.toml の日本語版。数値（クラス、統計設定、サンプルサイズ、基準）は config.toml と同一で、
+# 自由記述のテキストのみを翻訳している。事前登録版はコミット 6de2a12（フランス語）を参照。
+schema_version = "0.1"
+
+[evaluation]
+title = "figshare MRI（3 クラス）— SimpleCNN（A）対 ResNet18（B）"
+objective = "患者単位で分離したテストセットにおいて、ResNet18 のマクロ F1 が SimpleCNN に劣らないこと、神経膠腫の感度が 0.90 に達することを確認し、神経膠腫対その他の AUROC の優越性を検定する。"
+
+[classes]
+order = ["glioma", "meningioma", "pituitary"]
+positive = ["glioma"]   # 神経膠腫 対 髄膜腫 + 下垂体腺腫
+
+[data]
+ground_truth_mode = "separate_file"
+ground_truth_file = "ground_truth.csv"
+description = "figshare brain tumor dataset v8（DOI 10.6084/m9.figshare.1512427.v8）、造影 T1 強調画像 3,064 スライス。233 個の PID を 209 患者に統合した（語幹が同じ MR<番号><英字> 形式の PID を同一患者とみなす。README.md を参照）。テストセットはクラスごとに抽出した患者の 30%（乱数シード 20261029）で、学習用・検証用と共通する患者はいない。"
+nature = "clinical"
+manifest_sha256 = "19bd2870d659c7c1035c390d75700599b3832d3b04e5f4e13e2d24a8e93cba1d"
+
+[versions.A]
+id = "simplecnn-figshare-v1"
+code_commit = "2bcfb779e281476e4f74470fd5cd3688ef2f279e"
+weights_sha256 = "7b17a4a31fcbbb3eec1327c28994cfcc62e5cab45ba3bcadf34690f10f5127d2"
+predictions_file = "preds_simplecnn.csv"
+preprocessing = "画像ごとに min-max で uint8 に変換（figshare の README と同じ）、グレースケール化、224×224 にリサイズ、[0, 1] に正規化した後 (x − 0.5) / 0.5"
+description = "SimpleCNN（畳み込み + BN ブロック 3 つ、dropout 0.5）。brain-tumor-mri-classification リポジトリのアーキテクチャをゼロから学習"
+
+[versions.B]
+id = "resnet18-figshare-v1"
+code_commit = "2bcfb779e281476e4f74470fd5cd3688ef2f279e"
+weights_sha256 = "a8901dd2c84608fd77c0d902b467b8675a01b06a76e4c8a967e422fd225d73f5"
+predictions_file = "preds_resnet18.csv"
+preprocessing = "画像ごとに min-max で uint8 に変換、画像を 3 チャネルに複製、224×224 にリサイズ、ImageNet の正規化"
+description = "ImageNet で事前学習した ResNet18（torchvision）。全層を再学習"
+
+[statistics]
+confidence_level = 0.95
+bootstrap_resamples = 2000
+seed = 20261029
+
+[sample_size]
+status = "based_on_data_availability"
+justification = "サンプルサイズは公開データセット（233 患者）と、患者単位で 60/10/30 に分割する規則によって決まった。検出力の計算は行っていない。"
+
+[[criteria]]
+id = "C1"
+description = "ResNet18 のマクロ F1 が SimpleCNN に劣らない（マージン 0.03）"
+kind = "non_inferiority"
+metric = "macro_f1"
+margin = 0.03
+
+[[criteria]]
+id = "C2"
+description = "ResNet18 の神経膠腫（対その他）の感度が 0.90 以上"
+kind = "absolute"
+metric = "sensitivity"
+threshold = 0.90
+
+[[criteria]]
+id = "C3"
+description = "ResNet18 の神経膠腫（対その他）の AUROC が SimpleCNN を上回る"
+kind = "superiority"
+metric = "auroc"

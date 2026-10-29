@@ -1,4 +1,4 @@
-"""Exécution complète d'une évaluation à partir d'un fichier de configuration."""
+"""Complete run of an evaluation from a configuration file."""
 
 import platform
 import uuid
@@ -12,6 +12,7 @@ from medvision_qa.comparison import (DELONG_STATUS, McNemarResult, PairedDiffere
 from medvision_qa.confidence_intervals import BootstrapResult, bootstrap_metrics
 from medvision_qa.config import EvaluationConfig, load_config
 from medvision_qa.decision_engine import Decision, aggregate, evaluate_criterion
+from medvision_qa.i18n import Text
 from medvision_qa.metrics import confusion_matrix
 from medvision_qa.validation import GroundTruth, Predictions, load_ground_truth, load_predictions
 
@@ -37,12 +38,12 @@ class EvaluationResult:
     per_version: dict[str, BootstrapResult]
     differences: PairedDifferences | None
     mcnemar: McNemarResult | None
-    delong_status: str
+    delong_status: Text
     decision: Decision
 
 
 def run_evaluation(config_path, run_id: str | None = None) -> EvaluationResult:
-    """``run_id`` : identifiant imposé (par ex. par l'interface web) ; UUID4 généré sinon."""
+    """``run_id``: imposed identifier (e.g. by the web interface); a UUID4 is generated otherwise."""
     run = RunInfo(
         run_id=run_id or str(uuid.uuid4()),
         started_at_utc=datetime.now(timezone.utc).isoformat(timespec="seconds"),

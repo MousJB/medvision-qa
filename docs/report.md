@@ -1,61 +1,75 @@
-# Rapport HTML : Version Verification Record — v0.1
+# HTML report: Version Verification Record — v0.1
 
-Implémentation : `src/medvision_qa/report.py`, gabarit
-`src/medvision_qa/templates/report.html.j2`. Tests : `tests/test_report.py`.
+[日本語](ja/report.md)
+
+Implementation: `src/medvision_qa/report.py`, template
+`src/medvision_qa/templates/report.html.j2`, messages in `src/medvision_qa/i18n.py`.
+Tests: `tests/test_report.py`, `tests/test_i18n.py`.
 
 ```bash
-python -m medvision_qa config.toml -o rapport.html
+python -m medvision_qa config.toml -o report.html               # English
+python -m medvision_qa config.toml -o report.ja.html --lang ja  # Japanese
 ```
 
-Code de sortie : `0` si le rapport est généré, quelle que soit la décision ; `2` si la
-configuration ou les données sont invalides. Dans ce cas, aucun rapport n'est produit et
-les erreurs sont affichées.
+Exit code: `0` if the report is generated, whatever the decision; `2` if the
+configuration or the data are invalid. In that case no report is produced and the
+errors are printed.
 
-## 1. Propriétés garanties (testées)
+## 1. Guaranteed properties (tested)
 
-| Propriété | Comment |
+| Property | How |
 |---|---|
-| 21 sections de la spécification (§ 10), dans l'ordre | `<h2 id="s1">` à `<h2 id="s21">` |
-| Texte minimal de « What This Report Cannot Establish » | constante `CANNOT_ESTABLISH`, affichée intégralement |
-| Aucune donnée inventée | tout vient de `EvaluationResult` ; un champ vide est affiché « Not provided » à sa place **et** récapitulé en section 19 |
-| Nombres cohérents avec les calculs | IC, justifications, matrices de confusion, hashes comparés aux objets calculés |
-| Autonome | CSS en ligne, aucun script, aucune URL externe, aucune police distante |
-| Texte utilisateur échappé | titres, descriptions et justifications passent par l'échappement HTML de Jinja2 |
-| Pas de chemin absolu | les fichiers sont affichés relativement à la configuration (pas de nom d'utilisateur ni d'arborescence locale) |
-| Reproductible | même configuration → rapport identique, à l'identifiant et à l'horodatage d'exécution près |
-| 4 états de taille d'échantillon | `Provided`, `Not provided`, `Not applicable`, `Based on data availability` (+ avertissement) ; taille réelle toujours affichée à part |
+| The 21 sections of the specification (§ 10), in order | `<h2 id="s1">` to `<h2 id="s21">` |
+| Minimum text of "What This Report Cannot Establish" | constant `CANNOT_ESTABLISH`, shown in full |
+| No invented data | everything comes from `EvaluationResult`; an empty field is shown as "Not provided" in place **and** summarised in section 19 |
+| Numbers consistent with the calculations | CIs, justifications, confusion matrices and hashes compared with the computed objects |
+| Self-contained | inline CSS, no script, no external URL, no remote font |
+| User text escaped | titles, descriptions and justifications go through Jinja2 HTML escaping |
+| No absolute path | files are shown relative to the configuration (no user name or local tree) |
+| Reproducible | same configuration → identical report, except for the run identifier and timestamp; LF line endings on every OS |
+| 4 sample-size states | `Provided`, `Not provided`, `Not applicable`, `Based on data availability` (+ warning); the actual size is always shown separately |
+| Two languages | English (default) and Japanese render the same content: same sections, same numbers, same table cells (tested) |
 
-## 2. Contenu par section
+## 2. Content by section
 
 | § | Section | Source |
 |---|---|---|
-| 1 | Identifiants | UUID d'exécution (identifie aussi le rapport), SHA-256 de la configuration |
-| 2 | Date et heure | début d'exécution, UTC |
-| 3 | Objectif | `evaluation.title`, `evaluation.objective`, type de comparaison, nombre de cas |
-| 4 | Versions | `versions.*.id`, description, présence de scores |
-| 5 | Code et poids | `code_commit`, `weights_sha256` **déclarés** (les poids ne sont pas lus) |
+| 1 | Identifiers | run UUID (also identifies the report), SHA-256 of the configuration |
+| 2 | Date and time | start of the run, UTC |
+| 3 | Objective | `evaluation.title`, `evaluation.objective`, comparison type, number of cases |
+| 4 | Versions | `versions.*.id`, description, whether scores are present |
+| 5 | Code and weights | **declared** `code_commit`, `weights_sha256` (the weights are not read) |
 | 6 | Dataset | `data.description`, `data.nature`, `data.manifest_sha256` |
-| 7 | Provenance | chemin relatif, SHA-256 **calculé** et nombre de lignes de chaque CSV |
-| 8 | Prétraitement, dépendances | `versions.*.preprocessing`, graine, tolérance, Python, versions des paquets |
-| 9 | Classes | ordre indexé, tâche binaire dérivée |
-| 10 | Validation | mode de vérité terrain, alignement, contrôles exécutés par fichier |
-| 11 | Métriques | estimation et IC par version, raisons d'indéfinition, avertissements, définitions |
-| 12 | Matrices de confusion | une par version |
-| 13 | Paramètres des IC | méthode, niveau, tirages, graine, unité et nombre d'unités |
-| 14 | Tests statistiques | Δ = B − A apparié, McNemar (ou raison de non-applicabilité), statut de DeLong |
-| 15 | Critères | définition de chaque critère, hash de la configuration |
-| 16 | Décision | état et justification par critère, conclusion globale, règle d'agrégation |
-| 17 | Taille d'échantillon | taille réelle, état, texte fourni, avertissement si applicable |
-| 18 | Robustesse | « non exécutés » (non pris en charge en v0.1) |
-| 19 | Non disponible | liste générée : métadonnées manquantes, métriques indéfinies, tests non applicables |
-| 20 | Limites | liste générée selon les données (nature, `patient_id`, multiplicité...) et limites générales |
-| 21 | What This Report Cannot Establish | texte fixe de la spécification |
+| 7 | Provenance | relative path, **computed** SHA-256 and row count of each CSV |
+| 8 | Preprocessing, dependencies | `versions.*.preprocessing`, seed, tolerance, Python, package versions |
+| 9 | Classes | indexed order, derived binary task |
+| 10 | Validation | ground truth mode, alignment, checks run per file |
+| 11 | Metrics | estimate and CI per version, reasons for undefined values, warnings, definitions |
+| 12 | Confusion matrices | one per version |
+| 13 | CI parameters | method, level, draws, seed, unit and number of units |
+| 14 | Statistical tests | paired Δ = B − A, McNemar (or the reason it does not apply), DeLong status |
+| 15 | Criteria | definition of each criterion, configuration hash |
+| 16 | Decision | state and justification per criterion, overall conclusion, aggregation rule |
+| 17 | Sample size | actual size, state, text provided, warning if applicable |
+| 18 | Robustness | "not run" (not supported in v0.1) |
+| 19 | Not available | generated list: missing metadata, undefined metrics, tests that do not apply |
+| 20 | Limitations | list generated from the data (nature, `patient_id`, multiplicity...) and general limits |
+| 21 | What This Report Cannot Establish | fixed text of the specification |
 
-## 3. Limites connues
+## 3. Languages
 
-- Rapport en français. Seuls les libellés imposés par la spécification sont en anglais
-  (« What This Report Cannot Establish », « Not provided », états de décision).
-- Pas de graphiques (courbes ROC, etc.) : uniquement des tableaux.
-- Les métadonnées déclarées (commit, hash des poids, prétraitement) sont affichées telles
-  quelles : l'outil ne peut pas vérifier qu'elles correspondent aux modèles réellement
-  utilisés.
+Every label and every generated sentence (justifications, undefined-value reasons,
+limitations) comes from the message catalog `src/medvision_qa/i18n.py`, where each entry
+holds its English and Japanese text. The engine stores messages as key + parameters, so
+one evaluation can be rendered in either language. `tests/test_i18n.py` checks that both
+languages use the same placeholders and that every key used in the code exists.
+
+The free text of the configuration (title, objective, descriptions) is shown as written.
+For a report entirely in Japanese, write it in Japanese (see
+`examples/synthetic_demo/config.ja.toml`).
+
+## 4. Known limits
+
+- No charts (ROC curves, etc.): tables only.
+- Declared metadata (commit, weight hash, preprocessing) are shown as is: the tool cannot
+  check that they match the models actually used.

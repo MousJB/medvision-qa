@@ -1,36 +1,35 @@
-"""Évaluation des critères d'acceptation et agrégation (docs/evaluation_config.md § 3).
+"""Evaluation of the acceptance criteria and aggregation (docs/evaluation_config.md § 3).
 
-Les décisions reposent uniquement sur les bornes des intervalles de confiance. Un
-intervalle indéfini ou de largeur nulle mène à INCONCLUSIVE, jamais à SATISFIED.
+Decisions rest only on the bounds of the confidence intervals. An undefined or
+zero-width interval leads to INCONCLUSIVE, never to SATISFIED.
 """
 
 from dataclasses import dataclass
 
 from medvision_qa.config import Criterion
 from medvision_qa.confidence_intervals import ConfidenceInterval
+from medvision_qa.i18n import Text, msg
 
 SATISFIED = "SATISFIED"
 NOT_SATISFIED = "NOT_SATISFIED"
 INCONCLUSIVE = "INCONCLUSIVE"
 
-AGGREGATION_RULE = ("NOT_SATISFIED si au moins un critère est NOT_SATISFIED ; sinon INCONCLUSIVE "
-                    "si au moins un critère est INCONCLUSIVE ; SATISFIED seulement si tous les "
-                    "critères sont SATISFIED.")
+AGGREGATION_RULE = msg("dec.aggregation_rule")
 
 
 @dataclass(frozen=True)
 class CriterionResult:
     criterion: Criterion
     state: str
-    reason: str
-    quantity: str  # ce qui est comparé, par ex. "macro_f1 (B − A)"
+    reason: Text
+    quantity: str  # what is compared, e.g. "macro_f1 (B − A)"
     interval: ConfidenceInterval
 
 
 @dataclass(frozen=True)
 class Decision:
     state: str
-    reason: str
+    reason: Text
     criteria: tuple[CriterionResult, ...]
 
 
@@ -39,7 +38,7 @@ def _fmt(x: float) -> str:
 
 
 def evaluate_criterion(criterion: Criterion, interval: ConfidenceInterval) -> CriterionResult:
-    """``interval`` : IC de la métrique (absolute) ou de Δ = B − A (comparaisons)."""
+    """``interval``: CI of the metric (absolute) or of Δ = B − A (comparisons)."""
     key = criterion.metric_key
     quantity = f"{key} ({criterion.version})" if criterion.kind == "absolute" else f"{key} (B − A)"
 
@@ -47,47 +46,45 @@ def evaluate_criterion(criterion: Criterion, interval: ConfidenceInterval) -> Cr
         return CriterionResult(criterion, state, reason, quantity, interval)
 
     if not interval.defined:
-        return result(INCONCLUSIVE, f"intervalle non calculable : {interval.undefined_reason}")
+        return result(INCONCLUSIVE, msg("dec.interval_undefined", reason=interval.undefined_reason))
     if interval.zero_width:
-        return result(INCONCLUSIVE, "intervalle de largeur nulle : l'incertitude n'est pas "
-                                    "estimable par le bootstrap percentile sur ces données")
+        return result(INCONCLUSIVE, msg("dec.zero_width"))
     lo, hi = interval.lower, interval.upper
-    ci = f"IC [{_fmt(lo)}, {_fmt(hi)}]"
+    ci = msg("dec.ci", lower=_fmt(lo), upper=_fmt(hi))
 
     if criterion.kind == "absolute":
-        t = criterion.threshold
-        if lo >= t:
-            return result(SATISFIED, f"{ci} : borne inférieure ≥ seuil {_fmt(t)}")
-        if hi < t:
-            return result(NOT_SATISFIED, f"{ci} : borne supérieure < seuil {_fmt(t)}")
-        return result(INCONCLUSIVE, f"{ci} contient le seuil {_fmt(t)}")
+        t = _fmt(criterion.threshold)
+        if lo >= criterion.threshold:
+            return result(SATISFIED, msg("dec.abs_satisfied", ci=ci, t=t))
+        if hi < criterion.threshold:
+            return result(NOT_SATISFIED, msg("dec.abs_not", ci=ci, t=t))
+        return result(INCONCLUSIVE, msg("dec.abs_inconclusive", ci=ci, t=t))
 
     if criterion.kind == "non_inferiority":
-        m = criterion.margin
-        if lo > -m:
-            return result(SATISFIED, f"{ci} : borne inférieure > −marge ({_fmt(-m)})")
-        if hi < -m:
-            return result(NOT_SATISFIED, f"{ci} : borne supérieure < −marge ({_fmt(-m)}) ; B inférieure")
-        return result(INCONCLUSIVE, f"{ci} contient −marge ({_fmt(-m)}) ; "
-                                    "la non-infériorité n'est ni démontrée ni exclue")
+        m = -criterion.margin
+        if lo > m:
+            return result(SATISFIED, msg("dec.ni_satisfied", ci=ci, m=_fmt(m)))
+        if hi < m:
+            return result(NOT_SATISFIED, msg("dec.ni_not", ci=ci, m=_fmt(m)))
+        return result(INCONCLUSIVE, msg("dec.ni_inconclusive", ci=ci, m=_fmt(m)))
 
     if criterion.kind == "superiority":
         if lo > 0:
-            return result(SATISFIED, f"{ci} : borne inférieure > 0")
+            return result(SATISFIED, msg("dec.sup_satisfied", ci=ci))
         if hi <= 0:
-            return result(NOT_SATISFIED, f"{ci} : borne supérieure ≤ 0")
-        return result(INCONCLUSIVE, f"{ci} contient 0 ; la supériorité n'est pas démontrée")
+            return result(NOT_SATISFIED, msg("dec.sup_not", ci=ci))
+        return result(INCONCLUSIVE, msg("dec.sup_inconclusive", ci=ci))
 
-    raise ValueError(f"Type de critère inconnu : {criterion.kind!r}")
+    raise ValueError(f"Unknown criterion type: {criterion.kind!r}")
 
 
 def aggregate(results: tuple[CriterionResult, ...]) -> Decision:
     if not results:
-        raise ValueError("Aucun critère : pas de décision possible.")
+        raise ValueError("No criterion: no decision is possible.")
     by_state = {s: [r.criterion.id for r in results if r.state == s]
                 for s in (SATISFIED, NOT_SATISFIED, INCONCLUSIVE)}
     if by_state[NOT_SATISFIED]:
-        return Decision(NOT_SATISFIED, f"critère(s) non satisfait(s) : {by_state[NOT_SATISFIED]}", results)
+        return Decision(NOT_SATISFIED, msg("dec.not_satisfied", ids=str(by_state[NOT_SATISFIED])), results)
     if by_state[INCONCLUSIVE]:
-        return Decision(INCONCLUSIVE, f"critère(s) inconclusif(s) : {by_state[INCONCLUSIVE]}", results)
-    return Decision(SATISFIED, f"les {len(results)} critère(s) sont satisfaits", results)
+        return Decision(INCONCLUSIVE, msg("dec.inconclusive", ids=str(by_state[INCONCLUSIVE])), results)
+    return Decision(SATISFIED, msg("dec.satisfied", n=len(results)), results)

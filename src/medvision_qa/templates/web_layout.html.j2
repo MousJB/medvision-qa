@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,11 +8,11 @@
   :root { --fg:#1d232a; --muted:#5b6672; --line:#d5dbe1; --bg-alt:#f4f6f8; --accent:#1f4e79;
           --ok:#1f6f3f; --ok-bg:#e4f3ea; --ko:#a32222; --ko-bg:#fbe7e7; --inc:#8a5a00; --inc-bg:#fdf1d8; }
   * { box-sizing: border-box; }
-  body { font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--fg);
-         max-width: 1000px; margin: 0 auto; padding: 24px; }
-  header.top { display: flex; justify-content: space-between; align-items: baseline;
+  body { font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+         color: var(--fg); max-width: 1000px; margin: 0 auto; padding: 24px; }
+  header.top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
                border-bottom: 1px solid var(--line); margin-bottom: 16px; }
-  header.top a { color: var(--fg); text-decoration: none; font-weight: 700; font-size: 1.2rem; }
+  header.top a.home { color: var(--fg); text-decoration: none; font-weight: 700; font-size: 1.2rem; }
   h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 28px; }
   a { color: var(--accent); }
   .muted, .note { color: var(--muted); } .note { font-size: .85rem; }
@@ -35,8 +35,12 @@
 </style>
 </head>
 <body>
-<header class="top"><a href="/">MedVision QA</a><span class="muted">usage local · aucune donnée n'est envoyée sur Internet</span></header>
+<header class="top">
+  <a class="home" href="{{ url('/') }}">MedVision QA</a>
+  <span class="muted">{{ _("web.local_only") }} ·
+    {% if lang == "ja" %}<a href="{{ path }}" lang="en" hreflang="en">English</a>{% else %}<a href="{{ path }}?lang=ja" lang="ja" hreflang="ja">日本語</a>{% endif %}</span>
+</header>
 {% block content %}{% endblock %}
-<footer class="note"><p>Outil d'aide à l'évaluation technique. Ce n'est ni un dispositif médical, ni une validation clinique, ni une preuve de conformité réglementaire.</p></footer>
+<footer class="note"><p>{{ _("web.footer") }}</p></footer>
 </body>
 </html>

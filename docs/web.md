@@ -1,67 +1,74 @@
-# Interface web locale — v0.1
+# Local web interface — v0.1
 
-Implémentation : `src/medvision_qa/web.py`, `src/medvision_qa/history.py`, gabarits
-`src/medvision_qa/templates/web_*.html.j2`. Tests : `tests/test_web.py`,
+[日本語](ja/web.md)
+
+Implementation: `src/medvision_qa/web.py`, `src/medvision_qa/history.py`, templates
+`src/medvision_qa/templates/web_*.html.j2`. Tests: `tests/test_web.py`,
 `tests/test_history.py`.
 
 ```bash
 pip install -e ".[web]"
-python -m medvision_qa.web                # http://127.0.0.1:8000
+python -m medvision_qa.web                # http://127.0.0.1:8000 (Japanese: /?lang=ja)
 python -m medvision_qa.web --port 8080 --data-dir D:/evaluations
 ```
 
 ## 1. Workflow
 
-1. **Accueil** (`/`) : formulaire d'import et historique des évaluations.
-2. Importer une configuration `.toml` et les CSV qu'elle référence (au plus 4). Les noms
-   des CSV doivent correspondre aux chemins de la configuration. Les fichiers de la
-   démonstration synthétique sont téléchargeables depuis l'accueil.
-3. **Lancer** : validation, calculs et décision (quelques secondes), puis redirection vers
-   la page de résultat.
-4. **Résultat** (`/evaluations/<id>`) : conclusion globale et état de chaque critère avec
-   sa justification. Liens pour ouvrir ou télécharger le Version Verification Record.
-5. **Refus** (configuration ou données invalides) : la liste des erreurs est affichée
-   (50 au plus, liste complète dans l'historique). Aucun rapport n'est produit et les
-   fichiers importés sont **supprimés**.
+1. **Home** (`/`): upload form and history of evaluations. The link at the top right
+   switches between English and Japanese (`?lang=ja`); the choice follows every page.
+2. Upload a `.toml` configuration and the CSV files it references (4 at most). The CSV
+   names must match the paths in the configuration. The files of the synthetic demo,
+   including a Japanese configuration (`config.ja.toml`), can be downloaded from the home
+   page.
+3. **Run**: validation, calculations and decision (a few seconds), then redirect to the
+   result page.
+4. **Result** (`/evaluations/<id>`): overall decision and the state of each criterion with
+   its justification. Links to open or download the Version Verification Record in the
+   current language.
+5. **Rejection** (invalid configuration or data): the list of errors is shown (50 at most,
+   complete list in the history). No report is produced and the uploaded files are
+   **deleted**.
 
-## 2. Stockage local
+## 2. Local storage
 
 ```
 medvision_data/
-├── history.sqlite          # une ligne par évaluation, terminée ou refusée
-└── runs/<id>/              # évaluations terminées uniquement
-    ├── config.toml, *.csv  # fichiers importés, octet pour octet
-    └── report.html
+├── history.sqlite          # one row per evaluation, completed or rejected
+└── runs/<id>/              # completed evaluations only
+    ├── config.toml, *.csv  # uploaded files, byte for byte
+    ├── report.html         # English report
+    └── report.ja.html      # Japanese report
 ```
 
-Le même identifiant (UUID4) sert pour l'exécution, le dossier, la ligne d'historique et
-le rapport. Les fichiers étant conservés à l'identique, leurs SHA-256 dans le rapport
-restent vérifiables. Le dossier `medvision_data/` est exclu de git.
+The same identifier (UUID4) is used for the run, the folder, the history row and the
+report. Since the files are kept unchanged, their SHA-256 in the report remain
+verifiable. The history stores messages (decision reasons, errors) as message keys with
+their parameters, so it can be shown in either language. The `medvision_data/` folder is
+excluded from git.
 
-## 3. Sécurité (spec § 12)
+## 3. Security (spec § 12)
 
-| Mesure | Détail |
+| Measure | Detail |
 |---|---|
-| Écoute locale uniquement | `127.0.0.1`, pas d'option pour écouter sur le réseau |
-| Aucun appel externe | aucune requête sortante, aucun JavaScript, aucune ressource distante |
-| Noms de fichiers | `^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$`, sans dossier ; extension `.toml` / `.csv` ; pas de doublon |
-| Taille | 50 Mo par fichier, 4 CSV au maximum |
-| Chemins de la configuration | confinés au dossier de l'évaluation (`..` et chemins absolus refusés) |
-| Identifiants dans l'URL | UUID4 validé par expression régulière, puis recherché dans l'historique |
-| Contenu | seuls du CSV et du TOML sont lus ; rien n'est exécuté ni désérialisé autrement |
-| En-têtes | CSP `default-src 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store` |
-| Échappement | tout texte utilisateur passe par l'échappement Jinja2 (testé avec une injection HTML) |
-| SQL | requêtes paramétrées (testé) |
-| Documentation d'API | `/docs`, `/redoc`, `/openapi.json` désactivés |
+| Local listening only | `127.0.0.1`, no option to listen on the network |
+| No external call | no outgoing request, no JavaScript, no remote resource |
+| File names | `^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$`, no folder; `.toml` / `.csv` extension; no duplicate |
+| Size | 50 MB per file, 4 CSV files at most |
+| Configuration paths | confined to the evaluation folder (`..` and absolute paths refused) |
+| Identifiers in the URL | UUID4 checked by regular expression, then looked up in the history |
+| Content | only CSV and TOML are read; nothing is executed or deserialised otherwise |
+| Headers | CSP `default-src 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store` |
+| Escaping | all user text goes through Jinja2 escaping (tested with an HTML injection) |
+| SQL | parameterised queries (tested) |
+| API documentation | `/docs`, `/redoc`, `/openapi.json` disabled |
+| Language parameter | only `en` and `ja` are accepted; any other value falls back to English |
 
-## 4. Limites
+## 4. Limits
 
-- Application mono-utilisateur, sans authentification ni protection CSRF : elle ne doit
-  pas être exposée sur un réseau.
-- Évaluation synchrone : la page attend la fin des calculs (environ 6 s pour la démo de
-  872 cas avec 2 000 tirages).
-- La configuration est importée telle quelle. Il n'y a pas de formulaire pour composer les
-  critères : c'est voulu, puisque le fichier versionné est la trace des critères définis à
-  l'avance.
-- Pas de suppression d'évaluation depuis l'interface (supprimer le dossier et la ligne à
-  la main).
+- Single-user application, without authentication or CSRF protection: it must not be
+  exposed on a network.
+- Synchronous evaluation: the page waits for the calculations (about 6 s for the 872-case
+  demo with 2,000 draws; both reports are generated).
+- The configuration is uploaded as is. There is no form to compose the criteria: this is
+  deliberate, since the versioned file is the record of the criteria defined in advance.
+- No deletion of an evaluation from the interface (delete the folder and the row by hand).

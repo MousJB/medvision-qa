@@ -1,0 +1,56 @@
+# MedVision QA デモ — 合成データ（generate.py を参照）。
+schema_version = "0.1"
+
+[evaluation]
+title = "合成データによるデモ — MRI 分類器 v1 と v2 の比較"
+objective = "v2 のマクロ F1 が v1 に劣らないこと、腫瘍の感度が 0.90 以上を保つことを確認し、AUROC の優越性を検定する。"
+
+[classes]
+order = ["glioma", "meningioma", "notumor", "pituitary"]
+positive = ["glioma", "meningioma", "pituitary"]   # 腫瘍 vs notumor
+
+[data]
+ground_truth_mode = "separate_file"
+ground_truth_file = "ground_truth.csv"
+description = "generate.py で生成した模擬症例（乱数シード 20261029）: 450 患者、各 1〜3 画像。"
+nature = "synthetic"
+manifest_sha256 = ""
+
+[versions.A]
+id = "demo-cnn-v1"
+predictions_file = "preds_v1.csv"
+description = "模擬的な基準バージョン"
+
+[versions.B]
+id = "demo-cnn-v2"
+predictions_file = "preds_v2.csv"
+description = "模擬的な候補バージョン"
+
+[statistics]
+confidence_level = 0.95
+bootstrap_resamples = 2000
+seed = 20261029
+
+[sample_size]
+status = "not_applicable"
+justification = "デモ用の合成データであり、実在の母集団についての推論は意図していない。"
+
+[[criteria]]
+id = "C1"
+description = "v2 のマクロ F1 が v1 に劣らない（マージン 0.02）"
+kind = "non_inferiority"
+metric = "macro_f1"
+margin = 0.02
+
+[[criteria]]
+id = "C2"
+description = "v2 の腫瘍の感度が 0.90 以上"
+kind = "absolute"
+metric = "sensitivity"
+threshold = 0.90
+
+[[criteria]]
+id = "C3"
+description = "v2 の腫瘍 AUROC が v1 を上回る"
+kind = "superiority"
+metric = "auroc"

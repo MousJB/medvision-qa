@@ -1,14 +1,16 @@
-# Expérience IRM réelle : figshare (Jun Cheng), deux versions, évaluation MedVision QA
+# Real MRI experiment: figshare (Jun Cheng), two versions, MedVision QA evaluation
 
-Protocole fixé avant entraînement : [PROTOCOL.md](PROTOCOL.md) et
-[figshare_eval/config.toml](figshare_eval/config.toml) (commit `6de2a12`). Sources et
-licences : [docs/phase4_data_sources.md](../../docs/phase4_data_sources.md).
+[日本語](README.ja.md)
 
-> Données : figshare « brain tumor dataset », Jun Cheng, v8, **CC BY 4.0**,
+Protocol fixed before training: [PROTOCOL.md](PROTOCOL.md) and
+[figshare_eval/config.toml](figshare_eval/config.toml) (commit `6de2a12`). Sources and
+licences: [docs/phase4_data_sources.md](../../docs/phase4_data_sources.md).
+
+> Data: figshare "brain tumor dataset", Jun Cheng, v8, **CC BY 4.0**,
 > DOI [10.6084/m9.figshare.1512427.v8](https://doi.org/10.6084/m9.figshare.1512427.v8).
-> Aucune image n'est versionnée ici ; seuls des identifiants, hashes et agrégats le sont.
+> No image is versioned here; only identifiers, hashes and aggregates are.
 
-## Reproduire
+## Reproduce
 
 ```bash
 python -m venv .venv-train
@@ -16,149 +18,156 @@ python -m venv .venv-train
 .venv-train\Scripts\python -m pip install h5py pillow kagglehub numpy scipy
 .venv-train\Scripts\python -m pip install -e . --no-deps
 
-.venv-train\Scripts\python experiments/brain_mri/download_figshare.py     # MD5 vérifiés
-.venv-train\Scripts\python experiments/brain_mri/prepare_figshare.py      # PNG, manifeste, séparation, audit
+.venv-train\Scripts\python experiments/brain_mri/download_figshare.py     # MD5 checked
+.venv-train\Scripts\python experiments/brain_mri/prepare_figshare.py      # PNG, manifest, split, audit
 .venv-train\Scripts\python experiments/brain_mri/train.py simplecnn
 .venv-train\Scripts\python experiments/brain_mri/train.py resnet18
 python -m medvision_qa experiments/brain_mri/figshare_eval/config.toml -o experiments/brain_mri/figshare_eval/report.html
+python -m medvision_qa experiments/brain_mri/figshare_eval/config.ja.toml -o experiments/brain_mri/figshare_eval/report.ja.html --lang ja
 ```
 
-## 1. Préparation et audit des données
+## 1. Data preparation and audit
 
-| Élément | Résultat |
+| Item | Result |
 |---|---|
-| Fichiers | 3 064 `.mat` (MATLAB v7.3 / HDF5), lus avec h5py : champs `label`, `PID`, `image` uniquement |
-| Tailles | 3 049 en 512×512, 15 en 256×256 |
-| PID bruts | 233 ; aucun PID associé à deux classes |
-| Doublons exacts (pixels) | **0** |
-| Quasi-doublons (pHash, distance ≤ 4) | 724 paires, très majoritairement des coupes voisines d'un même patient |
+| Files | 3,064 `.mat` files (MATLAB v7.3 / HDF5), read with h5py: fields `label`, `PID`, `image` only |
+| Sizes | 3,049 at 512×512, 15 at 256×256 |
+| Raw PIDs | 233; no PID linked to two classes |
+| Exact duplicates (pixels) | **0** |
+| Near-duplicates (pHash, distance ≤ 4) | 724 pairs, mostly neighbouring slices of the same patient |
 
-### Constat : un même patient sous plusieurs PID
+### Finding: one patient under several PIDs
 
-Les PID de forme `MR<nombre><lettre>` (43 PID, tous des gliomes) forment **18 familles
-de même racine** (par ex. `MR024780B`, `D`, `E`, `G`). Avec la séparation par PID brut,
-**12 familles se retrouvaient réparties entre entraînement, validation et test.**
+PIDs of the form `MR<number><letter>` (43 PIDs, all gliomas) form **18 families sharing
+a root** (e.g. `MR024780B`, `D`, `E`, `G`). With a split on raw PIDs, **12 families were
+spread across training, validation and test.**
 
-Inspection visuelle (planches dans `data/inspection/`, non versionnées) : les coupes de
-`MR024780D` (test) et `MR024780E` (entraînement) sont quasi identiques (même tête, même
-lésion). `MR049453` / `MR049453B`, `MR051644B` / `MR051644C` et `MR040240` /
-`MR040240D` montrent la même anatomie et la même lésion, avec des différences
-compatibles avec des examens à des dates différentes. Ce n'est pas une expertise
-radiologique.
+Visual inspection (contact sheets in `data/inspection/`, not versioned): the slices of
+`MR024780D` (test) and `MR024780E` (training) are near-identical (same head, same
+lesion). `MR049453` / `MR049453B`, `MR051644B` / `MR051644C` and `MR040240` /
+`MR040240D` show the same anatomy and the same lesion, with differences consistent with
+scans on different dates. This is not a radiological opinion.
 
-**Décision (écart au protocole, pris avant tout entraînement)** : un patient = la racine
-du PID. On passe à 209 patients, et la séparation donne **125 / 20 / 64 patients**
-(1 996 / 292 / 776 images). C'est le choix prudent : fusionner à tort deux patients ne
-fait que réduire l'échantillon, alors que les laisser séparés risquait une fuite vers le
-test. Les critères d'acceptation n'ont pas changé.
+**Decision (protocol deviation, taken before any training)**: one patient = the PID root.
+This gives 209 patients, and the split gives **125 / 20 / 64 patients**
+(1,996 / 292 / 776 images). It is the cautious choice: wrongly merging two patients only
+shrinks the sample, while keeping them apart risked a leak into the test set. The
+acceptance criteria did not change.
 
-### Quasi-doublons entre patients différents : faux positifs
+### Near-duplicates between different patients: false positives
 
-Après regroupement, 69 paires relient des patients différents, dont 38 entre des jeux
-différents. **Les 38 paires ont toutes été inspectées** : les lésions, les têtes et les
-contrastes diffèrent ; seule l'orientation de coupe (sagittale médiane, axiale) se
-ressemble, et 11 de ces paires associent même un méningiome à un gliome. Le pHash à seuil 4 est
-trop permissif pour l'IRM cérébrale : il signale des ressemblances, il ne prouve rien.
+After grouping, 69 pairs link different patients, 38 of them across different sets. **All
+38 pairs were inspected**: the lesions, heads and contrasts differ; only the slice
+orientation (mid-sagittal, axial) looks alike, and 11 of these pairs even match a
+meningioma with a glioma. A pHash with a threshold of 4 is too permissive for brain MRI:
+it flags resemblance, it proves nothing.
 
-Détails : [figshare_eval/data_audit.json](figshare_eval/data_audit.json),
+Details: [figshare_eval/data_audit.json](figshare_eval/data_audit.json),
 [figshare_eval/manifest.csv](figshare_eval/manifest.csv).
 
-## 2. Audit du dataset Kaggle MRI-BT (celui de `brain-tumor-mri-classification`)
+## 2. Audit of the Kaggle MRI-BT dataset (the one used by `brain-tumor-mri-classification`)
 
-Script : [audit_mri_bt.py](audit_mri_bt.py). Résultats :
-[mri_bt_audit/summary.json](mri_bt_audit/summary.json) et
-[mri_bt_audit/flagged_pairs.csv](mri_bt_audit/flagged_pairs.csv) (noms de fichiers
-seulement : aucune image n'est versionnée, la licence de Br35H n'étant pas ouverte).
-Périmètre : le jeu original BT-MRI (Training 5 712, Testing 1 311, toutes les images en
-224×224). Les jeux « Challenging » sont exclus, puisqu'ils sont par construction des
-dégradations des mêmes images.
+Script: [audit_mri_bt.py](audit_mri_bt.py). Results:
+[mri_bt_audit/summary.json](mri_bt_audit/summary.json) and
+[mri_bt_audit/flagged_pairs.csv](mri_bt_audit/flagged_pairs.csv) (file names only: no
+image is versioned, since the Br35H licence is not open). Scope: the original BT-MRI set
+(Training 5,712, Testing 1,311, every image at 224×224). The "Challenging" sets are
+excluded, since by construction they are degradations of the same images.
 
-| Constat | Valeur |
+| Finding | Value |
 |---|---|
-| Groupes de fichiers **identiques à l'octet** | 300 (695 paires) |
-| Paires identiques **Training ↔ Testing** | 365 |
-| **Images de Testing ayant une copie identique dans Training** | **216 / 1 311 (16,5 %)** : méningiome 106, no-tumor 105, hypophyse 5 |
-| Doublons identiques portant des étiquettes différentes | 0 |
-| Quasi-doublons (pHash ≤ 4) à étiquettes différentes | 50 ; **24 inspectées** : toutes montrent des images différentes, donc des faux positifs (les 26 autres n'ont pas été inspectées) |
-| Images MRI-BT proches d'une image figshare (pHash ≤ 4) | 1 704 (surtout méningiome et hypophyse de Training), étiquettes concordantes dans 98 % des paires |
+| Groups of **byte-identical** files | 300 (695 pairs) |
+| **Training ↔ Testing** identical pairs | 365 |
+| **Testing images with an identical copy in Training** | **216 / 1,311 (16.5%)**: meningioma 106, no-tumor 105, pituitary 5 (recounted independently on 2026-10-29) |
+| Identical duplicates with different labels | 0 |
+| Near-duplicates (pHash ≤ 4) with different labels | 50; **24 inspected**: all show different images, hence false positives (the other 26 were not inspected) |
+| MRI-BT images close to a figshare image (pHash ≤ 4) | 1,704 (mostly Training meningioma and pituitary), labels agree in 98% of the pairs |
 
-**Ce que l'on peut affirmer.** 16,5 % des images de test de MRI-BT sont des copies exactes
-d'images d'entraînement. Une évaluation sur ce découpage Training/Testing n'est donc pas
-indépendante pour ces images, et les performances publiées sur ce découpage (y compris
-celles du README de `brain-tumor-mri-classification`) sont probablement optimistes.
-L'ampleur de ce biais n'a pas été mesurée.
+**What can be stated.** 16.5% of the MRI-BT test images are exact copies of training
+images. An evaluation on this Training/Testing split is therefore not independent for
+these images, and the performance published on this split (including the figures in the
+`brain-tumor-mri-classification` README, which now says so) is probably optimistic. The
+size of this bias was not measured.
 
-**Ce que l'on ne peut pas affirmer.** Un fichier identique prouve une image identique,
-pas l'identité d'un patient. L'absence de `patient_id` dans MRI-BT empêche de vérifier si
-d'autres coupes d'un même patient sont réparties entre les deux jeux. La correspondance
-avec figshare (1 704 images) est cohérente avec l'hypothèse d'un assemblage incluant
-figshare, sans la prouver à elle seule.
+**What cannot be stated.** An identical file proves an identical image, not the identity
+of a patient. Since MRI-BT has no `patient_id`, it is impossible to check whether other
+slices of the same patient are spread across both sets. The match with figshare (1,704
+images) is consistent with an assembly that includes figshare, without proving it on its
+own.
 
-## 3. Entraînement des deux versions
+## 3. Training the two versions
 
 | | A — SimpleCNN | B — ResNet18 (ImageNet) |
 |---|---|---|
-| Meilleure époque (macro-F1 de validation) | 13 (0,850) | 15 (0,954) |
-| Durée (GTX 1650) | 169 s | 196 s |
-| SHA-256 des poids | `7b17a4a3…5127d2` | `a8901dd2…25d73f5` |
-| Journal complet | [training_simplecnn.json](figshare_eval/training_simplecnn.json) | [training_resnet18.json](figshare_eval/training_resnet18.json) |
+| Best epoch (validation macro-F1) | 13 (0.850) | 15 (0.954) |
+| Duration (GTX 1650) | 169 s | 196 s |
+| SHA-256 of the weights | `7b17a4a3…5127d2` | `a8901dd2…25d73f5` |
+| Full log | [training_simplecnn.json](figshare_eval/training_simplecnn.json) | [training_resnet18.json](figshare_eval/training_resnet18.json) |
 
-Environnement : torch 2.14.1+cu126, torchvision, Python 3.12.6. Les poids ne sont pas
-versionnés ; ils sont dans `data/models/` et identifiés par leur SHA-256.
+Environment: torch 2.14.1+cu126, torchvision, Python 3.12.6. The weights are not
+versioned; they are in `data/models/` and identified by their SHA-256.
 
-**Code.** Les journaux d'entraînement indiquent `code_commit = dedb768`, qui était le HEAD au
-moment de l'exécution, alors que `train.py` n'était pas encore commité. Le code exécuté a
-été commité sans modification dans `2bcfb77` : contenu identique, vérifié par SHA-256
-après normalisation des fins de ligne. C'est ce commit qui est déclaré dans
-`config.toml`.
+**Code.** The training logs state `code_commit = dedb768`, which was HEAD at run time,
+while `train.py` was not yet committed. The code that ran was committed unchanged in
+`2bcfb77`: identical content, checked by SHA-256 after normalising line endings. That
+commit is the one declared in `config.toml`.
 
-**Déterminisme partiel.** Les graines sont fixées et les algorithmes déterministes sont
-demandés (`warn_only`), mais certaines opérations CUDA n'ont pas de version déterministe.
-Un nouvel entraînement peut donc donner des poids légèrement différents.
+**Partial determinism.** Seeds are fixed and deterministic algorithms are requested
+(`warn_only`), but some CUDA operations have no deterministic version. A new training run
+may therefore give slightly different weights.
 
-## 4. Évaluation MedVision QA (test : 776 coupes, 64 patients)
+## 4. MedVision QA evaluation (test: 776 slices, 64 patients)
 
-Rapport : [figshare_eval/report.html](figshare_eval/report.html). Commande :
-`python -m medvision_qa experiments/brain_mri/figshare_eval/config.toml -o …`.
-Intervalles à 95 %, bootstrap percentile **par patient** (64 unités), 2 000 tirages.
+Reports: [figshare_eval/report.html](figshare_eval/report.html) (English) and
+[figshare_eval/report.ja.html](figshare_eval/report.ja.html) (Japanese). 95% intervals,
+percentile bootstrap **by patient** (64 units), 2,000 draws.
 
-| Critère (fixé avant entraînement) | Résultat | État |
+| Criterion (fixed before training) | Result | State |
 |---|---|---|
-| C1 — macro-F1 de B non inférieure à A (marge 0,03) | Δ = +0,129, IC [0,074 ; 0,188] | **SATISFIED** |
-| C2 — sensibilité gliome de B ≥ 0,90 | 0,929, IC [0,865 ; 0,970] | **INCONCLUSIVE** |
-| C3 — AUROC gliome de B supérieure à A | 0,916 → 0,990, Δ IC [0,031 ; 0,135] | **SATISFIED** |
-| **Décision globale** | | **INCONCLUSIVE** |
+| C1 — macro-F1 of B not inferior to A (margin 0.03) | Δ = +0.129, CI [0.074; 0.188] | **SATISFIED** |
+| C2 — glioma sensitivity of B ≥ 0.90 | 0.929, CI [0.865; 0.970] | **INCONCLUSIVE** |
+| C3 — glioma AUROC of B higher than A | 0.916 → 0.990, Δ CI [0.031; 0.135] | **SATISFIED** |
+| **Overall decision** | | **INCONCLUSIVE** |
 
-| Métrique | A — SimpleCNN | B — ResNet18 |
+| Metric | A — SimpleCNN | B — ResNet18 |
 |---|---|---|
-| Accuracy | 0,800 [0,730 ; 0,860] | 0,928 [0,875 ; 0,968] |
-| Macro-F1 | 0,795 [0,717 ; 0,851] | 0,923 [0,867 ; 0,964] |
-| Rappel gliome / méningiome / hypophyse | 0,800 / 0,750 / 0,835 | 0,929 / 0,934 / 0,923 |
-| Spécificité (gliome contre autres) | 0,844 | 0,969 |
-| AUROC (gliome contre autres) | 0,916 | 0,990 |
+| Accuracy | 0.800 [0.730; 0.860] | 0.928 [0.875; 0.968] |
+| Macro-F1 | 0.795 [0.717; 0.851] | 0.923 [0.867; 0.964] |
+| Recall glioma / meningioma / pituitary | 0.800 / 0.750 / 0.835 | 0.929 / 0.934 / 0.923 |
+| Specificity (glioma vs others) | 0.844 | 0.969 |
+| AUROC (glioma vs others) | 0.916 | 0.990 |
 
-**Lecture.** B est nettement meilleure que A sur ces données. Mais **C2 n'est pas
-démontré** : l'estimation de la sensibilité gliome (0,929) dépasse 0,90, alors que
-l'intervalle, avec 64 patients, contient encore 0,90. Conclure « OK » sur l'estimation
-ponctuelle serait une sur-interprétation, et c'est ce que l'état INCONCLUSIVE empêche.
-Pour trancher, il faudrait davantage de patients de test, ou un critère et une
-justification de taille d'échantillon définis en conséquence.
+**Reading.** B is clearly better than A on these data. But **C2 is not demonstrated**: the
+glioma sensitivity estimate (0.929) is above 0.90, while the interval, with 64 patients,
+still contains 0.90. Concluding "pass" from the point estimate would be an
+over-interpretation, and that is what the INCONCLUSIVE state prevents. Settling it would
+need more test patients, or a criterion and a sample-size justification defined
+accordingly.
 
-McNemar n'est **pas applicable** (plusieurs coupes par patient). DeLong n'est pas
-implémenté ; la différence d'AUROC vient du bootstrap apparié.
+McNemar does **not apply** (several slices per patient). DeLong is not implemented; the
+AUROC difference comes from the paired bootstrap.
 
-## 5. Limites
+## 5. Limits
 
-- Un seul dataset (2 hôpitaux chinois, acquisitions de 2005 à 2010, T1 avec gadolinium) :
-  aucune validation externe, et les résultats ne se transfèrent pas à d'autres
-  acquisitions.
-- Le regroupement des PID repose sur une hypothèse (même racine = même patient) étayée
-  par une inspection visuelle non experte.
-- Validation de 20 patients : la sélection de l'époque est bruitée (la macro-F1 de
-  validation de A varie de 0,54 à 0,85 d'une époque à l'autre).
-- Le min-max par image et le passage en 224×224 perdent de l'information. Aucun réglage
-  d'hyperparamètres n'a été fait : ce n'est pas une comparaison optimisée des deux
-  architectures.
-- Pas de tests de robustesse sur ces modèles. Les jeux « Challenging » de MRI-BT ont 4
-  classes (dont notumor) et ne correspondent pas à la tâche figshare à 3 classes.
-- Aucune de ces analyses n'est une validation clinique.
+- One dataset (2 hospitals in China, scans from 2005 to 2010, contrast-enhanced T1): no
+  external validation, and the results do not transfer to other acquisitions.
+- Grouping PIDs rests on an assumption (same root = same patient) supported by a
+  non-expert visual inspection.
+- Validation set of 20 patients: epoch selection is noisy (A's validation macro-F1 varies
+  from 0.54 to 0.85 between epochs).
+- Per-image min-max and resizing to 224×224 lose information. No hyperparameter tuning was
+  done: this is not an optimised comparison of the two architectures.
+- No robustness tests on these models. The MRI-BT "Challenging" sets have 4 classes
+  (including notumor) and do not match the 3-class figshare task.
+- None of these analyses is a clinical validation.
+
+## 6. Note on the English translation
+
+The repository was translated from French into English (and Japanese versions added) after
+the evaluation. Only free text changed: comments, messages, descriptions in
+`config.toml`, the descriptive fields `augmentation`, `selection` and `determinism` of
+`training_*.json`, and the "within" keys of `mri_bt_audit/summary.json`. Every number,
+hash, criterion and threshold is unchanged; the original French files remain in the git
+history (commit `3a387f5` and earlier). The reports were regenerated from the translated
+configuration, which is why their configuration hash differs from the one of commit
+`6de2a12`.

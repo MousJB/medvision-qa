@@ -6,8 +6,8 @@
   "max_epochs": 15,
   "learning_rate": 0.0001,
   "optimizer": "Adam",
-  "augmentation": "RandomHorizontalFlip, RandomRotation(10), paramètres tirés une fois par lot",
-  "selection": "meilleure macro-F1 de validation",
+  "augmentation": "RandomHorizontalFlip, RandomRotation(10), parameters drawn once per batch",
+  "selection": "best validation macro-F1",
   "best_epoch": 15,
   "best_val_macro_f1": 0.9535751604717122,
   "history": [
@@ -114,5 +114,5 @@
   "torch": "2.14.1+cu126",
   "torchvision": "0.29.1+cu126",
   "cuda": "12.6",
-  "determinism": "partiel : graines fixées et algorithmes déterministes demandés (warn_only) ; certaines opérations CUDA (rétropropagation du pooling) n'ont pas de version déterministe"
+  "determinism": "partial: seeds fixed and deterministic algorithms requested (warn_only); some CUDA operations (pooling backward pass) have no deterministic version"
 }

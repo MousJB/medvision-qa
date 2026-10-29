@@ -1,9 +1,8 @@
-"""Génère les CSV SYNTHÉTIQUES de la démonstration (aucune donnée réelle).
+"""Generates the SYNTHETIC CSV files of the demo (no real data).
 
-Simule deux versions d'un classifieur IRM 4 classes sur 450 patients (1 à 3 images
-chacun). La difficulté est partagée par les images d'un même patient, ce qui rend les cas
-corrélés et justifie le bootstrap par patient. La version B est construite un peu
-meilleure que A.
+Simulates two versions of a 4-class MRI classifier on 450 patients (1 to 3 images each).
+Difficulty is shared by the images of one patient, which makes the cases correlated and
+justifies the patient-level bootstrap. Version B is built slightly better than A.
 
     python examples/synthetic_demo/generate.py
 """
@@ -50,7 +49,7 @@ def main(out_dir: Path = HERE):
     (out_dir / "ground_truth.csv").write_text("\n".join(gt) + "\n", encoding="utf-8", newline="\n")
     write_predictions(out_dir / "preds_v1.csv", case_ids, simulate_scores(rng, y, difficulty, 3.2))
     write_predictions(out_dir / "preds_v2.csv", case_ids, simulate_scores(rng, y, difficulty, 3.6))
-    print(f"{len(y)} images, {n_patients} patients écrits dans {out_dir}")
+    print(f"{len(y)} images, {n_patients} patients written to {out_dir}")
 
 
 if __name__ == "__main__":

@@ -1,46 +1,48 @@
-# Protocole de l'expérience IRM figshare — fixé avant entraînement
+# Protocol of the figshare MRI experiment — fixed before training
 
-Date : 2026-10-29. Ce document et `figshare_eval/config.toml` sont commités **avant**
-le premier entraînement. Tout écart ultérieur sera signalé dans `README.md`.
+[日本語](PROTOCOL.ja.md)
 
-## Données
+Date: 2026-10-29. This document and `figshare_eval/config.toml` were committed **before**
+the first training run (commit `6de2a12`, original French version). Any later deviation is
+reported in `README.md`. This English translation changes no rule.
 
-- figshare « brain tumor dataset », Jun Cheng, v8, CC BY 4.0. Téléchargement vérifié par
-  MD5 (`download_figshare.py`).
-- 3 064 coupes, 233 patients, 3 classes : glioma, meningioma, pituitary. `case_id` =
-  numéro du fichier `.mat` ; `patient_id` = `cjdata.PID`.
+## Data
 
-## Séparation
+- figshare "brain tumor dataset", Jun Cheng, v8, CC BY 4.0. Download checked by MD5
+  (`download_figshare.py`).
+- 3,064 slices, 233 patients, 3 classes: glioma, meningioma, pituitary. `case_id` = number
+  of the `.mat` file; `patient_id` = `cjdata.PID`.
 
-- **Par patient**, stratifiée par classe : chaque patient n'a qu'un type de tumeur. Si un
-  patient apparaît avec plusieurs classes, l'anomalie est signalée et le patient est
-  exclu, en le documentant.
-- 60 % des patients pour l'entraînement, 10 % pour la validation, 30 % pour le test.
-  Graine 20261029.
-- Le jeu de test n'est utilisé qu'une fois, pour produire les prédictions finales. Aucun
-  réglage n'est fait sur le test.
+## Split
 
-## Modèles (deux versions)
+- **By patient**, stratified by class: each patient has only one tumour type. If a patient
+  appears with several classes, the anomaly is reported and the patient is excluded, with
+  documentation.
+- 60% of the patients for training, 10% for validation, 30% for testing. Seed 20261029.
+- The test set is used only once, to produce the final predictions. No tuning is done on
+  the test set.
 
-| Version | Modèle | Entraînement |
+## Models (two versions)
+
+| Version | Model | Training |
 |---|---|---|
-| A | SimpleCNN (architecture de `MousJB/brain-tumor-mri-classification`) | depuis zéro |
-| B | ResNet18 torchvision pré-entraîné ImageNet | toutes les couches |
+| A | SimpleCNN (architecture of `MousJB/brain-tumor-mri-classification`) | from scratch |
+| B | torchvision ResNet18 pretrained on ImageNet | all layers |
 
-Recette commune : Adam (lr 1e-3 pour A, 1e-4 pour B), 15 époques au maximum, taille de
-lot 32, perte d'entropie croisée, augmentation légère (retournement horizontal, rotation
-± 10°). Le **checkpoint retenu est celui de meilleure macro-F1 de validation**. Graine
-20261029, mode déterministe de cuDNN.
+Shared recipe: Adam (lr 1e-3 for A, 1e-4 for B), at most 15 epochs, batch size 32,
+cross-entropy loss, light augmentation (horizontal flip, rotation ± 10°). The **checkpoint
+kept is the one with the best validation macro-F1**. Seed 20261029, cuDNN deterministic
+mode.
 
-## Sorties
+## Outputs
 
 - `figshare_eval/ground_truth.csv` (`case_id`, `true_label`, `patient_id`).
 - `figshare_eval/preds_*.csv` (`predicted_label` = argmax, `score_*` = softmax).
-- SHA-256 des poids, configuration d'entraînement et versions des bibliothèques, dans
+- SHA-256 of the weights, training configuration and library versions, in
   `figshare_eval/training_*.json`.
-- Rapport MedVision QA généré avec `figshare_eval/config.toml`.
+- MedVision QA report generated with `figshare_eval/config.toml`.
 
-## Critères d'acceptation
+## Acceptance criteria
 
-Voir `figshare_eval/config.toml` (C1 non-infériorité macro-F1, marge 0,03 ; C2 sensibilité
-gliome ≥ 0,90 ; C3 supériorité de l'AUROC gliome).
+See `figshare_eval/config.toml` (C1 non-inferiority of macro-F1, margin 0.03; C2 glioma
+sensitivity ≥ 0.90; C3 superiority of the glioma AUROC).

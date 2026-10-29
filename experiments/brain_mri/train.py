@@ -1,7 +1,7 @@
-"""Entraîne une version (SimpleCNN ou ResNet18) sur figshare et exporte ses prédictions de test.
+"""Trains one version (SimpleCNN or ResNet18) on figshare and exports its test predictions.
 
-Suit PROTOCOL.md : séparation par patient issue de figshare_eval/manifest.csv, checkpoint
-de meilleure macro-F1 de validation, test utilisé une seule fois à la fin.
+Follows PROTOCOL.md: patient-level split from figshare_eval/manifest.csv, checkpoint with
+the best validation macro-F1, test set used only once at the end.
 
     python experiments/brain_mri/train.py simplecnn
     python experiments/brain_mri/train.py resnet18
@@ -9,7 +9,7 @@ de meilleure macro-F1 de validation, test utilisé une seule fois à la fin.
 
 import os
 
-os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")  # requis pour le déterminisme CUDA
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")  # required for CUDA determinism
 
 import argparse  # noqa: E402
 import csv  # noqa: E402
@@ -46,7 +46,7 @@ MODELS_DIR = ROOT / "data" / "models"
 
 
 class SimpleCNN(nn.Module):
-    """Architecture reprise de MousJB/brain-tumor-mri-classification (src/models.py, MIT)."""
+    """Architecture taken from MousJB/brain-tumor-mri-classification (src/models.py, MIT)."""
 
     def __init__(self, num_classes):
         super().__init__()
@@ -75,7 +75,7 @@ def build_model(name):
 
 
 def normalise(name, x):
-    """x : (N, 1, H, W) dans [0, 1]."""
+    """x: (N, 1, H, W) in [0, 1]."""
     if name == "simplecnn":
         return (x - 0.5) / 0.5
     mean = torch.tensor([0.485, 0.456, 0.406], device=x.device).view(1, 3, 1, 1)
@@ -160,7 +160,7 @@ def main():
         val = macro_f1(data["val"][1].numpy(), predict(model, name, data["val"][0], device))
         history.append({"epoch": epoch, "train_loss": total / len(order),
                         "val_macro_f1": val.value, "val_macro_f1_undefined": val.undefined_reason})
-        print(f"[{name}] époque {epoch:2d}  perte {total / len(order):.4f}  macro-F1 val {val.value}", flush=True)
+        print(f"[{name}] epoch {epoch:2d}  loss {total / len(order):.4f}  val macro-F1 {val.value}", flush=True)
         if val.defined and (best is None or val.value > best[1]):
             best = (epoch, val.value, {k: v.detach().cpu().clone() for k, v in model.state_dict().items()})
 
@@ -180,18 +180,18 @@ def main():
 
     record = {
         "model": name, "seed": SEED, "image_size": SIZE, "batch_size": BATCH, "max_epochs": MAX_EPOCHS,
-        "learning_rate": LR[name], "optimizer": "Adam", "augmentation": "RandomHorizontalFlip, RandomRotation(10), paramètres tirés une fois par lot",
-        "selection": "meilleure macro-F1 de validation", "best_epoch": best[0], "best_val_macro_f1": best[1],
+        "learning_rate": LR[name], "optimizer": "Adam", "augmentation": "RandomHorizontalFlip, RandomRotation(10), parameters drawn once per batch",
+        "selection": "best validation macro-F1", "best_epoch": best[0], "best_val_macro_f1": best[1],
         "history": history, "n_train": len(x_train), "n_val": len(data["val"][0]), "n_test": len(x_test),
         "weights_file": weights_path.name, "weights_sha256": weights_sha256, "code_commit": git_commit(),
         "duration_s": round(time.time() - start, 1), "device": torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu",
         "python": platform.python_version(), "torch": torch.__version__, "torchvision": torchvision.__version__,
         "cuda": torch.version.cuda,
-        "determinism": "partiel : graines fixées et algorithmes déterministes demandés (warn_only) ; certaines opérations CUDA (rétropropagation du pooling) n'ont pas de version déterministe",
+        "determinism": "partial: seeds fixed and deterministic algorithms requested (warn_only); some CUDA operations (pooling backward pass) have no deterministic version",
     }
     (EVAL_DIR / f"training_{name}.json").write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n",
                                                    encoding="utf-8", newline="\n")
-    print(f"[{name}] meilleure époque {best[0]} (macro-F1 val {best[1]:.4f}), poids {weights_sha256[:12]}…")
+    print(f"[{name}] best epoch {best[0]} (val macro-F1 {best[1]:.4f}), weights {weights_sha256[:12]}…")
 
 
 if __name__ == "__main__":

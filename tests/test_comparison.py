@@ -20,19 +20,19 @@ def make_data(y_true, pred_a, pred_b, scores_a=None, scores_b=None, groups=None)
 
 
 def exact_mcnemar_reference(b, c):
-    """McNemar exact écrit à la main (sans scipy) : 2 × P(X ≤ min(b, c)), X ~ Bin(b + c, ½)."""
+    """Hand-written exact McNemar (no scipy): 2 × P(X ≤ min(b, c)), X ~ Bin(b + c, ½)."""
     n, k = b + c, min(b, c)
     return min(1.0, 2 * math.fsum(math.comb(n, i) for i in range(k + 1)) / 2 ** n)
 
 
 def with_discordant(b, c, concordant=50):
-    """A seul correct sur b cas, B seul correct sur c cas, les deux corrects ailleurs."""
+    """Only A correct on b cases, only B correct on c cases, both correct elsewhere."""
     n = b + c + concordant
     y = np.zeros(n, dtype=int)
     pred_a = np.zeros(n, dtype=int)
     pred_b = np.zeros(n, dtype=int)
-    pred_b[:b] = 1          # B faux, A juste
-    pred_a[b:b + c] = 1     # A faux, B juste
+    pred_b[:b] = 1          # B wrong, A right
+    pred_a[b:b + c] = 1     # A wrong, B right
     return make_data(y, pred_a, pred_b)
 
 
@@ -50,7 +50,7 @@ def test_mcnemar_counts_sum_to_n():
 
 def test_mcnemar_not_applicable_without_discordant_pairs():
     r = mcnemar(with_discordant(0, 0), "A", "B")
-    assert r.p_value is None and "discordante" in r.not_applicable_reason
+    assert r.p_value is None and r.not_applicable_reason.key == "cmp.mcnemar_no_discordant"
 
 
 def test_mcnemar_not_applicable_with_several_cases_per_patient():
@@ -58,7 +58,7 @@ def test_mcnemar_not_applicable_with_several_cases_per_patient():
     clustered = make_data(d.y_true, d.y_pred["A"], d.y_pred["B"],
                           groups=np.arange(d.n_cases) // 2)
     r = mcnemar(clustered, "A", "B")
-    assert r.p_value is None and "patient" in r.not_applicable_reason
+    assert r.p_value is None and r.not_applicable_reason.key == "cmp.mcnemar_clustered"
 
 
 def test_mcnemar_applicable_with_one_case_per_patient():
@@ -68,7 +68,7 @@ def test_mcnemar_applicable_with_one_case_per_patient():
 
 
 def test_difference_direction_is_b_minus_a():
-    # B corrige 30 erreurs de A : Δ accuracy = +30/200.
+    # B fixes 30 of A's errors: Δ accuracy = +30/200.
     d = with_discordant(0, 30, concordant=170)
     diff = paired_differences(d, "A", "B", **STATS).intervals["accuracy"]
     assert diff.estimate.value == pytest.approx(30 / 200)
@@ -76,8 +76,8 @@ def test_difference_direction_is_b_minus_a():
 
 
 def test_pairing_narrows_interval_compared_with_single_versions():
-    # A et B ne diffèrent que sur 4 cas sur 400 : Δ est très précis, alors que chaque
-    # accuracy prise seule est incertaine (≈ ±0,04).
+    # A and B differ on only 4 cases out of 400: Δ is very precise, while each accuracy
+    # on its own is uncertain (≈ ±0.04).
     rng = np.random.default_rng(0)
     n = 400
     y = rng.integers(0, 2, n)
@@ -96,9 +96,9 @@ def test_identical_versions_give_zero_width_difference():
 
 
 def test_difference_undefined_when_metric_undefined_for_one_version():
-    d = with_discordant(3, 3)  # aucun positif dans les vérités terrain
+    d = with_discordant(3, 3)  # no positive case in the ground truth
     diff = paired_differences(d, "A", "B", **STATS).intervals["sensitivity"]
-    assert not diff.defined and "A :" in diff.estimate.undefined_reason
+    assert not diff.defined and "A: " in str(diff.estimate.undefined_reason)
 
 
 def test_auroc_difference_uses_scores_of_each_version():

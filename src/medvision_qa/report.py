@@ -1,44 +1,21 @@
-"""Version Verification Record : rapport HTML autonome (docs/report.md).
+"""Version Verification Record: self-contained HTML report (docs/report.md).
 
-Le rapport n'affiche que ce que contient ``EvaluationResult``. Toute information absente
-est affichée « Not provided » ou listée comme non disponible, jamais complétée.
+The report only shows what ``EvaluationResult`` contains. Any missing information is shown
+as "Not provided" or listed as not available, never filled in. The report can be rendered
+in English or Japanese (``lang``); both renderings carry the same content.
 """
 
 from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescape
 
-from medvision_qa.config import NOT_PROVIDED
 from medvision_qa.decision_engine import AGGREGATION_RULE
 from medvision_qa.evaluation import EvaluationResult
+from medvision_qa.i18n import DEFAULT_LANGUAGE, Text, check_language, msg, t
 from medvision_qa.metrics import DEFINITIONS
 
-SAMPLE_SIZE_LABELS = {
-    "provided": "Provided",
-    "not_provided": "Not provided",
-    "not_applicable": "Not applicable",
-    "based_on_data_availability": "Based on data availability",
-}
-DATA_NATURE_LABELS = {
-    "synthetic": "Données synthétiques",
-    "clinical": "Données cliniques réelles (déclaré par l'utilisateur)",
-    "not_provided": NOT_PROVIDED,
-}
-DATA_AVAILABILITY_WARNING = ("Une taille d'échantillon dictée par la disponibilité des données ne "
-                             "constitue pas une justification statistique.")
-
-CANNOT_ESTABLISH = (
-    "Un résultat non significatif ne prouve pas l'absence de régression, l'équivalence ou la "
-    "non-infériorité.",
-    "Cette analyse n'est pas une validation clinique ni une démonstration de sécurité clinique.",
-    "Ce rapport ne certifie pas la conformité à ISO 13485, au FDA QMSR ou à une autre réglementation.",
-    "Des tests de sensibilité synthétiques ne valident pas les conditions réelles d'acquisition "
-    "clinique.",
-    "La détection de quasi-doublons ne prouve pas à elle seule une fuite de données ni l'identité "
-    "d'un patient.",
-    "Les conclusions sont limitées aux données, au protocole, aux hypothèses et aux méthodes "
-    "effectivement utilisés.",
-)
+DATA_AVAILABILITY_WARNING = msg("r.availability_warning")
+CANNOT_ESTABLISH = tuple(msg(f"cannot.{i}") for i in range(1, 7))
 
 _env = Environment(loader=PackageLoader("medvision_qa", "templates"),
                    autoescape=select_autoescape(default=True, default_for_string=True),
@@ -53,98 +30,101 @@ def _p_value(p) -> str:
     return "—" if p is None else ("< 0.0001" if p < 1e-4 else f"{p:.4f}")
 
 
-def _or_not_provided(value: str) -> str:
-    return value if value else NOT_PROVIDED
+def _or_none(value: str) -> str | None:
+    """Empty metadata → None, shown as "Not provided" in the report's language."""
+    return value or None
 
 
 def _interval_cell(ci) -> dict:
-    note = ci.undefined_reason if not ci.defined else "; ".join(ci.warnings)
+    notes = (ci.undefined_reason,) if not ci.defined else ci.warnings
     return {"estimate": _num(ci.estimate.value), "lower": _num(ci.lower), "upper": _num(ci.upper),
-            "note": note, "defined": ci.defined}
+            "notes": notes, "defined": ci.defined}
 
 
-def _not_available(result: EvaluationResult) -> list[str]:
+def not_available(result: EvaluationResult) -> list[Text]:
     cfg = result.config
     items = []
     if not cfg.objective:
-        items.append("Objectif de l'évaluation (evaluation.objective) : Not provided")
+        items.append(msg("na.objective"))
     if not cfg.data_description:
-        items.append("Description des données (data.description) : Not provided")
+        items.append(msg("na.data_description"))
     if cfg.data_nature == "not_provided":
-        items.append("Nature des données (data.nature) : Not provided")
+        items.append(msg("na.data_nature"))
     if not cfg.manifest_sha256:
-        items.append("Hash SHA-256 du manifeste de données (data.manifest_sha256) : Not provided")
+        items.append(msg("na.manifest"))
     for v in cfg.versions.values():
-        for field, label in (("code_commit", "commit du code"), ("weights_sha256", "hash des poids"),
-                             ("preprocessing", "prétraitement"), ("description", "description")):
+        for field in ("code_commit", "weights_sha256", "preprocessing", "description"):
             if not getattr(v, field):
-                items.append(f"Version {v.name} — {label} (versions.{v.name}.{field}) : Not provided")
+                items.append(msg("na.version_field", v=v.name, label=msg(f"field.{field}"), field=field))
     if cfg.sample_size.status == "not_provided":
-        items.append("Justification de la taille d'échantillon : Not provided")
+        items.append(msg("na.sample_size"))
     if result.data.groups is None:
-        items.append("Identifiants patient (patient_id) : non fournis ; pas de rééchantillonnage par patient")
+        items.append(msg("na.patient_ids"))
     for name, res in result.per_version.items():
         for key, ci in res.intervals.items():
             if not ci.estimate.defined:
-                items.append(f"Version {name} — {key} : indéfinie ({ci.estimate.undefined_reason})")
+                items.append(msg("na.metric_undefined", v=name, key=key, reason=ci.estimate.undefined_reason))
             elif not ci.defined:
-                items.append(f"Version {name} — IC de {key} : non calculable ({ci.undefined_reason})")
+                items.append(msg("na.ci_undefined", v=name, key=key, reason=ci.undefined_reason))
     if result.mcnemar is not None and result.mcnemar.p_value is None:
-        items.append(f"Test de McNemar : non applicable ({result.mcnemar.not_applicable_reason})")
+        items.append(msg("na.mcnemar", reason=result.mcnemar.not_applicable_reason))
     if result.differences is not None:
-        items.append(f"Test de DeLong : {result.delong_status}")
+        items.append(msg("na.delong", status=result.delong_status))
     else:
-        items.append("Comparaison entre versions : non exécutée (une seule version déclarée)")
-    items.append("Tests de robustesse : non exécutés (non pris en charge par cette version de l'outil)")
+        items.append(msg("na.no_comparison"))
+    items.append(msg("na.robustness"))
     return items
 
 
-def _limitations(result: EvaluationResult) -> list[str]:
+def limitations(result: EvaluationResult) -> list[Text]:
     cfg = result.config
     items = []
     if cfg.data_nature == "synthetic":
-        items.append("Les données sont synthétiques : ces résultats ne renseignent pas sur les "
-                     "performances sur des données réelles.")
+        items.append(msg("lim.synthetic"))
     elif cfg.data_nature == "not_provided":
-        items.append("La nature des données (synthétiques ou réelles) n'est pas déclarée.")
+        items.append(msg("lim.nature_unknown"))
     if result.data.groups is None:
-        items.append("Sans identifiant patient, les cas sont supposés indépendants. Si plusieurs "
-                     "images proviennent du même patient, les intervalles de confiance sont trop "
-                     "étroits.")
-    items.append("Bootstrap percentile : la couverture réelle peut être inférieure au niveau nominal "
-                 "pour les petits échantillons et les métriques proches de 0 ou 1.")
+        items.append(msg("lim.no_patient_id"))
+    items.append(msg("lim.percentile"))
     if any(w for res in result.per_version.values() for ci in res.intervals.values() for w in ci.warnings):
-        items.append("Certains intervalles portent des avertissements (voir section 11).")
+        items.append(msg("lim.warnings"))
     if len(cfg.criteria) > 1:
-        items.append(f"{len(cfg.criteria)} critères évalués sans correction de multiplicité.")
-    items.append("L'outil ne peut pas prouver que les critères ont été définis avant l'analyse ; le "
-                 "hash de la configuration permet de le vérifier contre un historique externe (git).")
-    items.append("L'alignement vérifie la cohérence des identifiants de cas, pas que ces identifiants "
-                 "désignent les mêmes images pour toutes les versions.")
-    items.append("Les métriques portent sur la décision multiclasse (argmax) ; aucun seuil de décision "
-                 "alternatif n'est évalué.")
+        items.append(msg("lim.multiplicity", n=len(cfg.criteria)))
+    items.append(msg("lim.preregistration"))
+    items.append(msg("lim.alignment"))
+    items.append(msg("lim.argmax"))
     return items
 
 
-def build_context(result: EvaluationResult) -> dict:
+def _parameter(criterion) -> Text | str:
+    if criterion.kind == "absolute":
+        return msg("r.threshold", t=_num(criterion.threshold))
+    if criterion.kind == "non_inferiority":
+        return msg("r.margin", m=_num(criterion.margin))
+    return "Δ > 0"
+
+
+def build_context(result: EvaluationResult, lang: str = DEFAULT_LANGUAGE) -> dict:
+    lang = check_language(lang)
     cfg, data = result.config, result.data
     base = cfg.path.parent
 
     def rel(path: Path) -> str:
         return path.relative_to(base).as_posix()
 
+    def tr(value) -> str:
+        return value.render(lang) if isinstance(value, Text) else value
+
     files = []
     if result.ground_truth is not None:
-        files.append(("Vérité terrain", rel(cfg.ground_truth_file), result.ground_truth.source))
+        files.append((msg("r.ground_truth"), rel(cfg.ground_truth_file), result.ground_truth.source))
     for name, v in cfg.versions.items():
-        files.append((f"Prédictions version {name}", rel(v.predictions_file), result.predictions[name].source))
+        files.append((msg("r.predictions_of", v=name), rel(v.predictions_file), result.predictions[name].source))
 
     versions = [{
-        "name": v.name, "id": v.id, "description": _or_not_provided(v.description),
-        "code_commit": _or_not_provided(v.code_commit),
-        "weights_sha256": _or_not_provided(v.weights_sha256),
-        "preprocessing": _or_not_provided(v.preprocessing),
-        "has_scores": data.scores[v.name] is not None,
+        "name": v.name, "id": v.id, "description": _or_none(v.description),
+        "code_commit": _or_none(v.code_commit), "weights_sha256": _or_none(v.weights_sha256),
+        "preprocessing": _or_none(v.preprocessing), "has_scores": data.scores[v.name] is not None,
     } for v in cfg.versions.values()]
 
     version_names = list(cfg.versions)
@@ -160,16 +140,19 @@ def build_context(result: EvaluationResult) -> dict:
     settings = result.per_version["A"].settings
 
     return {
+        "lang": lang,
+        "_": lambda key, **params: t(key, lang, **params),
+        "tr": tr,
         "result": result,
         "title": cfg.title,
-        "objective": _or_not_provided(cfg.objective),
+        "objective": _or_none(cfg.objective),
         "run": result.run,
         "decision": result.decision,
         "aggregation_rule": AGGREGATION_RULE,
         "data_nature": cfg.data_nature,
-        "data_nature_label": DATA_NATURE_LABELS[cfg.data_nature],
-        "data_description": _or_not_provided(cfg.data_description),
-        "manifest_sha256": _or_not_provided(cfg.manifest_sha256),
+        "data_nature_label": (msg(f"r.nature.{cfg.data_nature}") if cfg.data_nature != "not_provided" else None),
+        "data_description": _or_none(cfg.data_description),
+        "manifest_sha256": _or_none(cfg.manifest_sha256),
         "config_file": cfg.path.name,
         "config_sha256": cfg.sha256,
         "versions": versions,
@@ -191,27 +174,23 @@ def build_context(result: EvaluationResult) -> dict:
         "mcnemar_p": _p_value(result.mcnemar.p_value) if result.mcnemar else None,
         "delong_status": result.delong_status,
         "criteria": [{"c": r.criterion, "state": r.state, "reason": r.reason, "quantity": r.quantity,
-                      "cell": _interval_cell(r.interval),
-                      "parameter": (f"seuil {_num(r.criterion.threshold)}" if r.criterion.kind == "absolute"
-                                    else f"marge {_num(r.criterion.margin)}" if r.criterion.kind == "non_inferiority"
-                                    else "Δ > 0")}
+                      "cell": _interval_cell(r.interval), "parameter": _parameter(r.criterion)}
                      for r in result.decision.criteria],
-        "sample_size_label": SAMPLE_SIZE_LABELS[status],
+        "sample_size_label": None if status == "not_provided" else msg(f"r.sample.{status}"),
         "sample_size_text": cfg.sample_size.justification,
         "sample_size_warning": DATA_AVAILABILITY_WARNING if status == "based_on_data_availability" else None,
-        "not_available": _not_available(result),
-        "limitations": _limitations(result),
+        "not_available": not_available(result),
+        "limitations": limitations(result),
         "cannot_establish": CANNOT_ESTABLISH,
-        "not_provided": NOT_PROVIDED,
     }
 
 
-def render_report(result: EvaluationResult) -> str:
-    return _env.get_template("report.html.j2").render(**build_context(result))
+def render_report(result: EvaluationResult, lang: str = DEFAULT_LANGUAGE) -> str:
+    return _env.get_template("report.html.j2").render(**build_context(result, lang))
 
 
-def write_report(result: EvaluationResult, path) -> Path:
+def write_report(result: EvaluationResult, path, lang: str = DEFAULT_LANGUAGE) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render_report(result), encoding="utf-8")
+    path.write_text(render_report(result, lang), encoding="utf-8", newline="\n")  # same bytes on every OS
     return path

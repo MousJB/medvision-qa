@@ -8,7 +8,7 @@ from medvision_qa.duplicates import (exact_duplicate_groups, hamming, load_grays
 
 
 def blobs(seed, n=32):
-    """Image synthétique lisse (somme de gaussiennes), proche d'une structure anatomique."""
+    """Smooth synthetic image (sum of Gaussians), close to an anatomical structure."""
     rng = np.random.default_rng(seed)
     y, x = np.mgrid[0:n, 0:n]
     img = np.zeros((n, n))
@@ -50,12 +50,12 @@ def test_near_duplicate_pairs_matches_brute_force():
                       for i, j in itertools.combinations(range(len(hashes)), 2)
                       if hamming(hashes[i], hashes[j]) <= 4)
     assert sorted(near_duplicate_pairs(hashes, max_distance=4, block=7)) == expected
-    assert len(expected) >= 50  # chaque variante retrouve son original
+    assert len(expected) >= 50  # every variant finds its original
 
 
 def test_near_duplicate_pairs_between_sets():
     a, b = [0b1111, 1 << 40], [0b1110, 0b0, (1 << 40) | 1]
-    # 1 << 40 et 0 ne diffèrent que d'un bit : distance 1 également
+    # 1 << 40 and 0 differ by one bit only: distance 1 as well
     assert sorted(near_duplicate_pairs(a, b, max_distance=1)) == [(0, 0, 1), (1, 1, 1), (1, 2, 1)]
     assert near_duplicate_pairs(a, b, max_distance=0) == []
 
@@ -75,5 +75,5 @@ def test_file_level_helpers(tmp_path):
     b.write_bytes(a.read_bytes())
     Image.fromarray(img.clip(0, 255).astype(np.uint8)).resize((256, 256)).save(c)
     assert sha256_file(a) == sha256_file(b) != sha256_file(c)
-    # même contenu à une autre résolution : quasi-doublon, pas doublon exact
+    # same content at another resolution: near-duplicate, not exact duplicate
     assert hamming(phash(load_grayscale(a)), phash(load_grayscale(c))) <= 4

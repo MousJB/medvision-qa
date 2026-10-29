@@ -1,4 +1,4 @@
-"""Rapport HTML : sections obligatoires, absence d'invention, autonomie, reproductibilité."""
+"""HTML report: mandatory sections, nothing invented, self-contained, reproducible, both languages."""
 
 import importlib.util
 import re
@@ -18,7 +18,7 @@ CLASSES = ("glioma", "meningioma", "notumor", "pituitary")
 
 CRITERION = ('[[criteria]]\nid = "C1"\ndescription = "NI accuracy"\nkind = "non_inferiority"\n'
              'metric = "accuracy"\nmargin = 0.05\n')
-ABSOLUTE = ('[[criteria]]\nid = "C1"\ndescription = "seuil"\nkind = "absolute"\n'
+ABSOLUTE = ('[[criteria]]\nid = "C1"\ndescription = "threshold"\nkind = "absolute"\n'
             'metric = "accuracy"\nthreshold = 0.5\n')
 
 
@@ -85,12 +85,12 @@ def test_all_21_sections_present_in_order(html):
 def test_cannot_establish_minimum_text(html):
     section = html[html.index('id="s21"'):]
     for sentence in CANNOT_ESTABLISH:
-        assert sentence.replace("'", "&#39;") in section
+        assert str(escape(str(sentence))) in section
 
 
 def test_standalone_no_external_resources(html):
     assert "<script" not in html.lower()
-    assert not re.search(r'(src|href)\s*=\s*"(?!#)', html)  # seuls les liens d'ancre internes
+    assert not re.search(r'(src|href)\s*=\s*"(?!#)', html)  # internal anchor links only
     assert "http://" not in html and "https://" not in html
     assert "@import" not in html
 
@@ -98,7 +98,7 @@ def test_standalone_no_external_resources(html):
 def test_missing_metadata_shown_as_not_provided(html):
     for field in ("versions.A.code_commit", "versions.B.weights_sha256", "data.manifest_sha256",
                   "evaluation.objective", "data.nature"):
-        assert f"({field}) : Not provided" in html
+        assert f"({field}): Not provided" in html
     assert re.search(r"Justification</dt><dd><span class=\"not-provided\">Not provided</span>", html)
 
 
@@ -107,27 +107,27 @@ def test_missing_metadata_not_provided_in_each_section(html):
         return html[html.index(f'id="s{n}"'):html.index(f'id="s{n + 1}"')]
 
     marker = '<span class="not-provided">Not provided</span>'
-    assert section(5).count(marker) == 4  # commit + poids, versions A et B
-    assert section(6).count(marker) == 3  # description, nature, hash du manifeste
-    assert section(8).count(marker) == 2  # prétraitement A et B
-    assert section(3).count(marker) == 1  # objectif
-    assert section(4).count(marker) == 2  # descriptions des versions
+    assert section(5).count(marker) == 4  # commit + weights, versions A and B
+    assert section(6).count(marker) == 3  # description, nature, manifest hash
+    assert section(8).count(marker) == 2  # preprocessing A and B
+    assert section(3).count(marker) == 1  # objective
+    assert section(4).count(marker) == 2  # version descriptions
 
 
 def test_provided_metadata_rendered_verbatim(make_eval):
     sha = "ab" * 32
     config = make_eval(versions_extra=f'code_commit = "1a2b3c4d"\nweights_sha256 = "{sha}"\n'
                                       'preprocessing = "z-score"\n',
-                       data_extra=f'description = "jeu test"\nnature = "clinical"\nmanifest_sha256 = "{sha}"')
+                       data_extra=f'description = "test set"\nnature = "clinical"\nmanifest_sha256 = "{sha}"')
     out = render_report(run_evaluation(config))
-    assert "1a2b3c4d" in out and sha in out and "z-score" in out and "jeu test" in out
-    assert "code_commit) : Not provided" not in out
-    assert "Données synthétiques." not in out
+    assert "1a2b3c4d" in out and sha in out and "z-score" in out and "test set" in out
+    assert "code_commit): Not provided" not in out
+    assert "Synthetic data." not in out
 
 
 def test_synthetic_banner(make_eval):
     out = render_report(run_evaluation(make_eval(data_extra='nature = "synthetic"')))
-    assert "<strong>Données synthétiques.</strong>" in out
+    assert "<strong>Synthetic data.</strong>" in out
 
 
 def test_numbers_match_computed_results(make_eval):
@@ -135,7 +135,7 @@ def test_numbers_match_computed_results(make_eval):
     out = render_report(result)
     for r in result.decision.criteria:
         assert f"[{r.interval.lower:.4f}, {r.interval.upper:.4f}]" in out
-        assert str(escape(r.reason)) in out
+        assert str(escape(str(r.reason))) in out
     a = result.per_version["A"].intervals["macro_f1"]
     assert f"{a.estimate.value:.4f}" in out
     for row in result.confusion_matrices["A"]:
@@ -158,25 +158,25 @@ def test_no_absolute_paths_in_report(make_eval, tmp_path):
 
 
 @pytest.mark.parametrize("sample_size, label, text, warning", [
-    ('status = "provided"\njustification = "Puissance 80 %, delta 0,05, McNemar"',
-     "Provided", "Puissance 80 %, delta 0,05, McNemar", False),
+    ('status = "provided"\njustification = "Power 80%, delta 0.05, McNemar"',
+     "Provided", "Power 80%, delta 0.05, McNemar", False),
     ('status = "not_provided"', "Not provided", None, False),
-    ('status = "not_applicable"\njustification = "étude pilote"', "Not applicable", "étude pilote", False),
+    ('status = "not_applicable"\njustification = "pilot study"', "Not applicable", "pilot study", False),
     ('status = "based_on_data_availability"', "Based on data availability", None, True),
 ])
 def test_sample_size_states(make_eval, sample_size, label, text, warning):
     out = render_report(run_evaluation(make_eval(sample_size=sample_size)))
     section = out[out.index('id="s17"'):out.index('id="s18"')]
     assert label in section
-    assert "Taille réelle</dt><dd>120 cas" in section
-    assert (text in section) if text else ("Texte fourni" not in section)
-    assert (DATA_AVAILABILITY_WARNING.replace("'", "&#39;") in section) == warning
+    assert "Actual size</dt><dd>120 cases" in section
+    assert (text in section) if text else ("Text provided" not in section)
+    assert (str(DATA_AVAILABILITY_WARNING) in section) == warning
 
 
 def test_single_version_report(make_eval):
     out = render_report(run_evaluation(make_eval(with_b=False, criteria=ABSOLUTE)))
-    assert "Évaluation d'une seule version" in out
-    assert "Comparaison entre versions : non exécutée" in out
+    assert "Evaluation of a single version" in out
+    assert "Comparison between versions: not run" in out
 
 
 def test_rendering_is_deterministic(make_eval):
@@ -196,7 +196,7 @@ def test_cli_writes_report(make_eval, tmp_path, capsys):
     out = tmp_path / "report.html"
     assert main([str(make_eval()), "-o", str(out)]) == 0
     assert out.read_text(encoding="utf-8").startswith("<!DOCTYPE html>")
-    assert "Rapport :" in capsys.readouterr().out
+    assert "Report:" in capsys.readouterr().out
 
 
 def test_cli_invalid_data_produces_no_report(make_eval, tmp_path, capsys):
@@ -205,7 +205,7 @@ def test_cli_invalid_data_produces_no_report(make_eval, tmp_path, capsys):
     out = tmp_path / "report.html"
     assert main([str(config), "-o", str(out)]) == 2
     assert not out.exists()
-    assert "aucun rapport" in capsys.readouterr().err
+    assert "no report produced" in capsys.readouterr().err
 
 
 def test_demo_data_regenerates_identically(tmp_path):
@@ -222,3 +222,43 @@ def test_demo_config_runs():
     assert result.config.data_nature == "synthetic"
     assert result.per_version["A"].settings.unit == "patient"
     assert "<h2 id=\"s21\">" in render_report(result)
+
+
+# --- Japanese report ---------------------------------------------------------------------
+
+JAPANESE = re.compile(r"[぀-ヿ一-鿿]")
+
+
+def test_japanese_report_has_same_structure_and_numbers(make_eval):
+    result = run_evaluation(make_eval(data_extra='nature = "synthetic"'))
+    en, ja = render_report(result, "en"), render_report(result, "ja")
+    assert '<html lang="ja">' in ja and '<html lang="en">' in en
+    assert [int(n) for n in re.findall(r'<h2 id="s(\d+)">', ja)] == list(range(1, 22))
+    assert "What This Report Cannot Establish（本レポートで立証できないこと）" in ja
+    assert "<strong>合成データ。</strong>" in ja
+    for r in result.decision.criteria:
+        assert f"[{r.interval.lower:.4f}, {r.interval.upper:.4f}]" in ja
+        assert str(escape(r.reason.render("ja"))) in ja
+    assert re.findall(r'<td class="num">[^<]*</td>', en) == re.findall(r'<td class="num">[^<]*</td>', ja)
+    assert result.config.sha256 in ja
+
+
+def test_japanese_report_text_is_translated(make_eval):
+    ja = render_report(run_evaluation(make_eval()), "ja")
+    section = ja[ja.index('id="s19"'):ja.index('id="s20"')]
+    assert "（versions.A.code_commit）: 未提供" in section
+    for item in re.findall(r"<li>(.*?)</li>", ja[ja.index('id="s19"'):]):
+        assert JAPANESE.search(item), item
+    for sentence in CANNOT_ESTABLISH:
+        assert sentence.render("ja") in ja
+
+
+def test_unknown_language_rejected(make_eval):
+    with pytest.raises(ValueError):
+        render_report(run_evaluation(make_eval()), "fr")
+
+
+def test_cli_language_option(make_eval, tmp_path):
+    out = tmp_path / "report.ja.html"
+    assert main([str(make_eval()), "-o", str(out), "--lang", "ja"]) == 0
+    assert '<html lang="ja">' in out.read_text(encoding="utf-8")

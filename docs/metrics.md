@@ -1,77 +1,77 @@
-# Métriques et intervalles de confiance — v0.1
+# Metrics and confidence intervals — v0.1
 
-Implémentation : `src/medvision_qa/metrics.py`, `src/medvision_qa/confidence_intervals.py`.
-Validées contre scikit-learn (référence indépendante) dans `tests/test_metrics.py`.
+[日本語](ja/metrics.md)
+
+Implementation: `src/medvision_qa/metrics.py`, `src/medvision_qa/confidence_intervals.py`.
+Validated against scikit-learn (independent reference) in `tests/test_metrics.py`.
 
 ## 1. Conventions
 
-- Matrice de confusion : lignes = vérité, colonnes = prédiction, dans l'ordre de
+- Confusion matrix: rows = ground truth, columns = prediction, in the order of
   `classes.order`.
-- Les métriques par classe sont en **un contre tous**. TP, FP et FN sont lus dans la
-  matrice de confusion.
-- Une métrique non calculable est **indéfinie, avec une raison**. Elle n'est jamais
-  remplacée par 0, par NaN ou par une autre valeur.
-- Clé d'une métrique : `accuracy`, `macro_f1`, `precision[<classe>]`, `recall[<classe>]`,
-  `f1[<classe>]`, `sensitivity`, `specificity`, `auroc`.
+- Per-class metrics are **one-vs-rest**. TP, FP and FN are read from the confusion matrix.
+- A metric that cannot be computed is **undefined, with a reason**. It is never replaced
+  by 0, by NaN or by any other value.
+- Metric key: `accuracy`, `macro_f1`, `precision[<class>]`, `recall[<class>]`,
+  `f1[<class>]`, `sensitivity`, `specificity`, `auroc`.
 
-## 2. Définitions et cas indéfinis
+## 2. Definitions and undefined cases
 
-| Métrique | Définition | Indéfinie si |
+| Metric | Definition | Undefined if |
 |---|---|---|
-| `accuracy` | cas corrects / cas | jamais (fichier non vide garanti) |
-| `precision[c]` | TP / (TP + FP) | `c` n'est jamais prédite |
-| `recall[c]` | TP / (TP + FN) | `c` est absente des vérités terrain |
-| `f1[c]` | 2·TP / (2·TP + FP + FN) | `c` est absente des vérités terrain **et** des prédictions |
-| `macro_f1` | moyenne non pondérée des `f1[c]` sur **toutes** les classes déclarées | un `f1[c]` est indéfini (aucune classe n'est écartée en silence) |
-| `sensitivity` | TP / (TP + FN), tâche binaire dérivée | pas de classe positive, ou aucun cas positif |
-| `specificity` | TN / (TN + FP), tâche binaire dérivée | pas de classe positive, ou aucun cas négatif |
-| `auroc` | Mann-Whitney sur le score positif ; ex æquo comptés ½ | pas de classe positive, pas de scores, ou une seule classe binaire présente |
+| `accuracy` | correct cases / cases | never (a non-empty file is guaranteed) |
+| `precision[c]` | TP / (TP + FP) | `c` is never predicted |
+| `recall[c]` | TP / (TP + FN) | `c` is absent from the ground truth |
+| `f1[c]` | 2·TP / (2·TP + FP + FN) | `c` is absent from the ground truth **and** from the predictions |
+| `macro_f1` | unweighted mean of `f1[c]` over **all** declared classes | any `f1[c]` is undefined (no class is silently dropped) |
+| `sensitivity` | TP / (TP + FN), derived binary task | no positive class, or no positive case |
+| `specificity` | TN / (TN + FP), derived binary task | no positive class, or no negative case |
+| `auroc` | Mann-Whitney on the positive score; ties counted as ½ | no positive class, no scores, or only one binary class present |
 
-Note sur `f1[c]` : la formule 2·TP / (2·TP + FP + FN) vaut 0 quand la classe est présente
-mais jamais correctement prédite, même si la précision est indéfinie. C'est le même
-résultat que scikit-learn avec `zero_division`, testé.
+Note on `f1[c]`: the formula 2·TP / (2·TP + FP + FN) gives 0 when the class is present
+but never correctly predicted, even if precision is undefined. This matches scikit-learn
+with `zero_division` (tested).
 
-Tâche binaire dérivée (voir [data_format.md](data_format.md#classes-positives-tâche-binaire-dérivée)) :
-la prédiction binaire vient de `predicted_label` (aucun nouveau seuil), et le score
-positif est la somme des scores des classes positives.
+Derived binary task (see [data_format.md](data_format.md#positive-classes-derived-binary-task)):
+the binary prediction comes from `predicted_label` (no new threshold), and the positive
+score is the sum of the scores of the positive classes.
 
-## 3. Intervalles de confiance
+## 3. Confidence intervals
 
-| Paramètre | Valeur |
+| Parameter | Value |
 |---|---|
-| Méthode | bootstrap **percentile**, bilatéral |
+| Method | **percentile** bootstrap, two-sided |
 | Quantiles | `numpy.quantile(..., method="linear")` |
-| Rééchantillonnages | ≥ 1000 (paramètre `bootstrap_resamples`) |
-| Graine | obligatoire ; générateur `numpy.random.default_rng(seed)` |
-| Unité | **patient** si `patient_id` est fourni (tous les cas d'un patient tiré sont inclus), sinon **cas** |
-| Ordre des cas | trié par `case_id` : le résultat ne dépend pas de l'ordre des lignes des fichiers |
+| Resamples | ≥ 1000 (`bootstrap_resamples` parameter) |
+| Seed | required; generator `numpy.random.default_rng(seed)` |
+| Unit | **patient** if `patient_id` is provided (every case of a drawn patient is included), otherwise **case** |
+| Case order | sorted by `case_id`: the result does not depend on the row order of the files |
 
-Tous ces paramètres sont enregistrés dans `BootstrapSettings`.
+All these parameters are recorded in `BootstrapSettings`.
 
-### Quand aucun intervalle n'est produit
+### When no interval is produced
 
-- La métrique est indéfinie sur l'échantillon complet.
-- La métrique est indéfinie dans **au moins un** rééchantillonnage, par exemple une classe
-  rare absente d'un tirage. Écarter ces tirages conditionnerait l'intervalle et le
-  rendrait trop optimiste. L'intervalle est donc déclaré non calculable, avec le nombre
-  de tirages concernés.
+- The metric is undefined on the full sample.
+- The metric is undefined in **at least one** resample, for example a rare class absent
+  from a draw. Discarding those draws would condition the interval and make it too
+  optimistic. The interval is therefore declared not computable, with the number of
+  draws concerned.
 
-### Avertissements attachés à un intervalle
+### Warnings attached to an interval
 
-- **Largeur nulle** : la métrique est constante dans tous les tirages (par ex. accuracy =
-  1). Le bootstrap percentile ne reflète alors pas l'incertitude réelle.
-- **Moins de 30 unités** de rééchantillonnage : la couverture du bootstrap percentile
-  n'est pas garantie. Le seuil de 30 est une convention, pas une garantie.
+- **Zero width**: the metric is constant across all draws (e.g. accuracy = 1). The
+  percentile bootstrap then does not reflect the real uncertainty.
+- **Fewer than 30 resampling units**: percentile bootstrap coverage is not guaranteed.
+  The threshold of 30 is a convention, not a guarantee.
 
-## 4. Limites
+## 4. Limits
 
-- Sans `patient_id`, l'intervalle suppose des cas indépendants. Si plusieurs images
-  viennent du même patient, il sera **trop étroit** (`tests/test_confidence_intervals.py`
-  montre un écart de plus de ×2 sur un exemple synthétique).
-- Le bootstrap percentile peut avoir une couverture inférieure au niveau nominal pour
-  les petits échantillons ou les métriques proches de 0 ou 1. Les méthodes BCa ou Wilson
-  ne sont pas implémentées en v0.1.
-- Un intervalle large n'est pas une preuve d'absence de différence. Les comparaisons
-  entre versions (bootstrap apparié) et les décisions arrivent en Phase 2.
-- Pas de macro-AUROC multiclasse en v0.1 : seule l'AUROC de la tâche binaire dérivée est
-  calculée.
+- Without `patient_id`, the interval assumes independent cases. If several images come
+  from the same patient, it is **too narrow** (`tests/test_confidence_intervals.py` shows
+  a gap of more than ×2 on a synthetic example).
+- The percentile bootstrap can have coverage below the nominal level for small samples
+  or for metrics close to 0 or 1. BCa or Wilson methods are not implemented in v0.1.
+- A wide interval is not proof of no difference. Comparisons between versions (paired
+  bootstrap) and decisions are described in [comparison.md](comparison.md).
+- No multiclass macro-AUROC in v0.1: only the AUROC of the derived binary task is
+  computed.
