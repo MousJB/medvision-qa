@@ -53,7 +53,7 @@ démontrée ni exclue`).
 ## 4. Traçabilité d'une exécution
 
 `run_evaluation(config)` enregistre : identifiant d'exécution (UUID4), horodatage UTC,
-version de Python, versions de medvision-qa, numpy, scipy et scikit-learn, SHA-256 de la
+version de Python, versions de medvision-qa, numpy, scipy, scikit-learn et jinja2, SHA-256 de la
 configuration et de chaque CSV, contrôles exécutés par fichier, paramètres du bootstrap,
 matrices de confusion.
 

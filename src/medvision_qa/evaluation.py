@@ -15,7 +15,7 @@ from medvision_qa.decision_engine import Decision, aggregate, evaluate_criterion
 from medvision_qa.metrics import confusion_matrix
 from medvision_qa.validation import GroundTruth, Predictions, load_ground_truth, load_predictions
 
-TRACKED_PACKAGES = ("medvision-qa", "numpy", "scipy", "scikit-learn")
+TRACKED_PACKAGES = ("medvision-qa", "numpy", "scipy", "scikit-learn", "jinja2")
 
 
 @dataclass(frozen=True)

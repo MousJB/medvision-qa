@@ -26,6 +26,7 @@ BINARY_METRICS = ("sensitivity", "specificity", "auroc")
 
 SAMPLE_SIZE_STATUSES = ("provided", "not_provided", "not_applicable", "based_on_data_availability")
 NOT_PROVIDED = "Not provided"
+DATA_NATURES = ("synthetic", "clinical", "not_provided")
 
 
 @dataclass(frozen=True)
@@ -35,6 +36,7 @@ class VersionConfig:
     predictions_file: Path
     code_commit: str
     weights_sha256: str
+    preprocessing: str
     description: str
 
 
@@ -70,6 +72,7 @@ class EvaluationConfig:
     ground_truth_mode: str
     ground_truth_file: Path | None
     data_description: str
+    data_nature: str
     manifest_sha256: str
     versions: dict[str, VersionConfig]
     confidence_level: float
@@ -139,6 +142,13 @@ def _data_path(base: Path, value: str, where: str) -> Path:
     return resolved
 
 
+def _data_nature(data: dict) -> str:
+    nature = _str(data, "nature", "data", default="not_provided")
+    if nature not in DATA_NATURES:
+        raise ConfigError(f"data.nature doit valoir l'un de {list(DATA_NATURES)}.")
+    return nature
+
+
 def _classes(raw: dict) -> ClassSpec:
     table = _table(raw, "classes", "classes")
     _check_keys(table, "classes", ("order",), ("positive",))
@@ -163,7 +173,7 @@ def _versions(raw: dict, base: Path) -> dict[str, VersionConfig]:
             continue
         where = f"versions.{name}"
         t = _table(table, name, where)
-        _check_keys(t, where, ("id", "predictions_file"), ("code_commit", "weights_sha256", "description"))
+        _check_keys(t, where, ("id", "predictions_file"), ("code_commit", "weights_sha256", "preprocessing", "description"))
         versions[name] = VersionConfig(
             name=name,
             id=_str(t, "id", where, required_non_empty=True),
@@ -172,6 +182,7 @@ def _versions(raw: dict, base: Path) -> dict[str, VersionConfig]:
                                  "hash de commit hexadécimal (7 à 40 caractères, minuscules)"),
             weights_sha256=_pattern(_str(t, "weights_sha256", where), SHA256_PATTERN,
                                     f"{where}.weights_sha256", "SHA-256 hexadécimal en minuscules"),
+            preprocessing=_str(t, "preprocessing", where),
             description=_str(t, "description", where),
         )
     if "B" in versions and versions["A"].id == versions["B"].id:
@@ -279,7 +290,7 @@ def load_config(path) -> EvaluationConfig:
     classes = _classes(raw)
 
     data = _table(raw, "data", "data")
-    _check_keys(data, "data", ("ground_truth_mode",), ("ground_truth_file", "description", "manifest_sha256"))
+    _check_keys(data, "data", ("ground_truth_mode",), ("ground_truth_file", "description", "nature", "manifest_sha256"))
     mode = _str(data, "ground_truth_mode", "data")
     if mode not in (SEPARATE_FILE, EMBEDDED):
         raise ConfigError(f"data.ground_truth_mode doit valoir {SEPARATE_FILE!r} ou {EMBEDDED!r}.")
@@ -303,6 +314,7 @@ def load_config(path) -> EvaluationConfig:
         ground_truth_mode=mode,
         ground_truth_file=ground_truth_file,
         data_description=_str(data, "description", "data"),
+        data_nature=_data_nature(data),
         manifest_sha256=_pattern(_str(data, "manifest_sha256", "data"), SHA256_PATTERN,
                                  "data.manifest_sha256", "SHA-256 hexadécimal en minuscules"),
         versions=versions,

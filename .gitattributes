@@ -1,0 +1,2 @@
+# Données de démonstration : octets figés (hashes SHA-256 reproductibles sur tout OS)
+examples/**/*.csv -text

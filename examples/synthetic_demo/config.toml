@@ -1,0 +1,56 @@
+# Démonstration MedVision QA — DONNÉES SYNTHÉTIQUES (voir generate.py).
+schema_version = "0.1"
+
+[evaluation]
+title = "Démonstration synthétique — classifieur IRM v1 vs v2"
+objective = "Vérifier que v2 n'est pas inférieure à v1 en macro-F1, que sa sensibilité tumeur reste ≥ 0,90, et tester une supériorité d'AUROC."
+
+[classes]
+order = ["glioma", "meningioma", "notumor", "pituitary"]
+positive = ["glioma", "meningioma", "pituitary"]   # tumeur vs notumor
+
+[data]
+ground_truth_mode = "separate_file"
+ground_truth_file = "ground_truth.csv"
+description = "Cas simulés par generate.py (graine 20261029) : 450 patients, 1 à 3 images chacun."
+nature = "synthetic"
+manifest_sha256 = ""
+
+[versions.A]
+id = "demo-cnn-v1"
+predictions_file = "preds_v1.csv"
+description = "Version de référence simulée"
+
+[versions.B]
+id = "demo-cnn-v2"
+predictions_file = "preds_v2.csv"
+description = "Version candidate simulée"
+
+[statistics]
+confidence_level = 0.95
+bootstrap_resamples = 2000
+seed = 20261029
+
+[sample_size]
+status = "not_applicable"
+justification = "Données synthétiques de démonstration : aucune inférence sur une population réelle n'est visée."
+
+[[criteria]]
+id = "C1"
+description = "Macro-F1 de v2 non inférieure à v1 (marge 0,02)"
+kind = "non_inferiority"
+metric = "macro_f1"
+margin = 0.02
+
+[[criteria]]
+id = "C2"
+description = "Sensibilité tumeur de v2 ≥ 0,90"
+kind = "absolute"
+metric = "sensitivity"
+threshold = 0.90
+
+[[criteria]]
+id = "C3"
+description = "AUROC tumeur de v2 supérieure à v1"
+kind = "superiority"
+metric = "auroc"

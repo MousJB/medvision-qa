@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Version Verification Record — {{ title }}</title>
+<style>
+  :root { --fg:#1d232a; --muted:#5b6672; --line:#d5dbe1; --bg-alt:#f4f6f8;
+          --ok:#1f6f3f; --ok-bg:#e4f3ea; --ko:#a32222; --ko-bg:#fbe7e7; --inc:#8a5a00; --inc-bg:#fdf1d8; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--fg);
+         max-width: 1100px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.15rem; margin: 32px 0 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+  h3 { font-size: 1rem; margin: 16px 0 6px; }
+  .muted, .note { color: var(--muted); }
+  .note { font-size: .85rem; }
+  code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; word-break: break-all; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: .9rem; }
+  th, td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+  th { background: var(--bg-alt); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .state { display: inline-block; padding: 1px 8px; border-radius: 4px; font-weight: 700; font-size: .85rem; }
+  .SATISFIED { color: var(--ok); background: var(--ok-bg); }
+  .NOT_SATISFIED { color: var(--ko); background: var(--ko-bg); }
+  .INCONCLUSIVE { color: var(--inc); background: var(--inc-bg); }
+  .banner { border: 1px solid var(--line); border-left: 5px solid var(--inc); background: var(--inc-bg);
+            padding: 8px 12px; margin: 12px 0; }
+  .disclaimer { border-left-color: var(--muted); background: var(--bg-alt); }
+  .decision { border: 1px solid var(--line); padding: 12px 16px; margin: 16px 0; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0; }
+  dt { font-weight: 600; } dd { margin: 0; }
+  nav ol { columns: 2; font-size: .9rem; }
+  .not-provided { color: var(--muted); font-style: italic; }
+  @media print { nav { display: none; } h2 { break-after: avoid; } table { break-inside: avoid; } }
+</style>
+</head>
+<body>
+{% macro value(v) %}{% if v == not_provided %}<span class="not-provided">{{ v }}</span>{% else %}{{ v }}{% endif %}{% endmacro %}
+{% macro interval(cell) %}<td class="num">{{ cell.estimate }}</td><td class="num">{% if cell.defined %}[{{ cell.lower }}, {{ cell.upper }}]{% else %}—{% endif %}</td>{% endmacro %}
+
+<header>
+  <p class="muted">Version Verification Record · MedVision QA {{ run.packages["medvision-qa"] }}</p>
+  <h1>{{ title }}</h1>
+  <p class="muted">Exécution <code>{{ run.run_id }}</code> · {{ run.started_at_utc }}</p>
+  {% if data_nature == "synthetic" %}
+  <div class="banner"><strong>Données synthétiques.</strong> Ce rapport porte sur des données générées artificiellement, pas sur des données cliniques.</div>
+  {% endif %}
+  <div class="banner disclaimer">Document technique d'évaluation. Ce n'est ni une validation clinique, ni une certification, ni une preuve de conformité réglementaire. Voir la section 21.</div>
+  <div class="decision">
+    <strong>Conclusion globale :</strong> <span class="state {{ decision.state }}">{{ decision.state }}</span>
+    — {{ decision.reason }}
+    <div class="note">Règle d'agrégation : {{ aggregation_rule }}</div>
+  </div>
+</header>
+
+<nav><ol>
+  <li><a href="#s1">Identifiants</a></li><li><a href="#s2">Date et heure</a></li>
+  <li><a href="#s3">Objectif</a></li><li><a href="#s4">Versions comparées</a></li>
+  <li><a href="#s5">Code, commits, poids</a></li><li><a href="#s6">Manifeste du dataset</a></li>
+  <li><a href="#s7">Provenance des fichiers</a></li><li><a href="#s8">Prétraitement, configuration, dépendances</a></li>
+  <li><a href="#s9">Classes</a></li><li><a href="#s10">Validation des données</a></li>
+  <li><a href="#s11">Métriques</a></li><li><a href="#s12">Matrices de confusion</a></li>
+  <li><a href="#s13">Intervalles de confiance</a></li><li><a href="#s14">Tests statistiques</a></li>
+  <li><a href="#s15">Critères d'acceptation</a></li><li><a href="#s16">État des critères</a></li>
+  <li><a href="#s17">Taille d'échantillon</a></li><li><a href="#s18">Robustesse</a></li>
+  <li><a href="#s19">Non disponible / non exécuté</a></li><li><a href="#s20">Limites</a></li>
+  <li><a href="#s21">What This Report Cannot Establish</a></li>
+</ol></nav>
+
+<h2 id="s1">1. Identifiant du rapport et de l'exécution</h2>
+<dl>
+  <dt>Identifiant d'exécution</dt><dd><code>{{ run.run_id }}</code> (identifie aussi ce rapport)</dd>
+  <dt>Configuration</dt><dd><code>{{ config_file }}</code> — SHA-256 <code>{{ config_sha256 }}</code></dd>
+</dl>
+
+<h2 id="s2">2. Date et heure de l'évaluation</h2>
+<p>{{ run.started_at_utc }} (UTC, début de l'exécution)</p>
+
+<h2 id="s3">3. Objectif et description de la comparaison</h2>
+<dl>
+  <dt>Titre</dt><dd>{{ title }}</dd>
+  <dt>Objectif</dt><dd>{{ value(objective) }}</dd>
+  <dt>Type</dt><dd>{% if version_names | length == 2 %}Comparaison appariée : B (candidate) contre A (référence), sur les mêmes {{ n_cases }} cas{% else %}Évaluation d'une seule version ({{ n_cases }} cas){% endif %}</dd>
+</dl>
+
+<h2 id="s4">4. Identifiants des versions comparées</h2>
+<table>
+  <tr><th>Rôle</th><th>Identifiant</th><th>Description</th><th>Scores fournis</th></tr>
+  {% for v in versions %}
+  <tr><td>{{ v.name }} — {{ "référence" if v.name == "A" else "candidate" }}</td><td><code>{{ v.id }}</code></td>
+      <td>{{ value(v.description) }}</td><td>{{ "oui" if v.has_scores else "non" }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2 id="s5">5. Code, commit, poids et hashes</h2>
+<table>
+  <tr><th>Version</th><th>Commit du code</th><th>SHA-256 des poids</th></tr>
+  {% for v in versions %}
+  <tr><td>{{ v.name }}</td><td class="mono">{{ value(v.code_commit) }}</td><td class="mono">{{ value(v.weights_sha256) }}</td></tr>
+  {% endfor %}
+</table>
+<p class="note">Valeurs déclarées dans la configuration, non vérifiées par l'outil (les poids ne sont pas lus).</p>
+
+<h2 id="s6">6. Manifeste du dataset</h2>
+<dl>
+  <dt>Description</dt><dd>{{ value(data_description) }}</dd>
+  <dt>Nature des données</dt><dd>{{ value(data_nature_label) }}</dd>
+  <dt>SHA-256 du manifeste</dt><dd class="mono">{{ value(manifest_sha256) }}</dd>
+</dl>
+
+<h2 id="s7">7. Provenance des fichiers</h2>
+<table>
+  <tr><th>Rôle</th><th>Fichier (relatif à la configuration)</th><th>SHA-256 (calculé)</th><th>Lignes</th></tr>
+  {% for role, path, source in files %}
+  <tr><td>{{ role }}</td><td><code>{{ path }}</code></td><td class="mono">{{ source.sha256 }}</td><td class="num">{{ source.n_rows }}</td></tr>
+  {% endfor %}
+</table>
+<p class="note">Les informations non fournies sont récapitulées en section 19.</p>
+
+<h2 id="s8">8. Prétraitement, configuration, dépendances et graines</h2>
+<table>
+  <tr><th>Version</th><th>Prétraitement déclaré</th></tr>
+  {% for v in versions %}<tr><td>{{ v.name }}</td><td>{{ value(v.preprocessing) }}</td></tr>{% endfor %}
+</table>
+<dl>
+  <dt>Graine</dt><dd>{{ statistics.seed }}</dd>
+  <dt>Tolérance somme des scores</dt><dd>{{ statistics.tolerance }}</dd>
+  <dt>Python</dt><dd>{{ run.python }}</dd>
+  <dt>Dépendances</dt><dd>{% for name, ver in run.packages.items() %}<code>{{ name }}=={{ ver }}</code>{{ ", " if not loop.last else "" }}{% endfor %}</dd>
+</dl>
+
+<h2 id="s9">9. Classes et ordre des classes</h2>
+<dl>
+  <dt>Ordre déclaré</dt><dd>{% for c in classes %}<code>{{ loop.index0 }}: {{ c }}</code>{{ ", " if not loop.last else "" }}{% endfor %}</dd>
+  <dt>Tâche binaire dérivée</dt><dd>{% if positive %}positif = {{ positive | join(", ") }} ; négatif = {{ negatives | join(", ") }}{% else %}aucune (pas de classe positive déclarée){% endif %}</dd>
+</dl>
+
+<h2 id="s10">10. Résumé des validations de données</h2>
+<p>Mode de vérité terrain : <code>{{ ground_truth_mode }}</code>. Alignement strict par <code>case_id</code> : {{ n_cases }} cas, identiques dans tous les fichiers. Aucune ligne n'a été supprimée, corrigée ou remplacée.</p>
+<table>
+  <tr><th>Fichier</th><th>Contrôles exécutés (tous réussis)</th></tr>
+  {% for role, path, source in files %}
+  <tr><td>{{ role }}</td><td class="mono">{{ source.checks | join(", ") }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2 id="s11">11. Métriques et définitions</h2>
+<table>
+  <tr><th rowspan="2">Métrique</th>{% for v in version_names %}<th colspan="2">Version {{ v }}</th>{% endfor %}<th rowspan="2">Remarques</th></tr>
+  <tr>{% for v in version_names %}<th>Estimation</th><th>IC {{ (statistics.confidence_level * 100) | round(1) }} %</th>{% endfor %}</tr>
+  {% for row in metric_rows %}
+  <tr><td><code>{{ row.key }}</code></td>
+    {% for cell in row.cells %}{{ interval(cell) }}{% endfor %}
+    <td class="note">{% for cell in row.cells %}{% if cell.note %}{{ version_names[loop.index0] }} : {{ cell.note }}<br>{% endif %}{% endfor %}</td></tr>
+  {% endfor %}
+</table>
+<h3>Définitions</h3>
+<dl>{% for name, text in definitions.items() %}<dt><code>{{ name }}</code></dt><dd>{{ text }}</dd>{% endfor %}</dl>
+
+<h2 id="s12">12. Matrices de confusion</h2>
+<p class="note">Lignes = vérité terrain, colonnes = prédiction.</p>
+{% for v, matrix in confusion %}
+<h3>Version {{ v }}</h3>
+<table>
+  <tr><th></th>{% for c in classes %}<th>{{ c }}</th>{% endfor %}</tr>
+  {% for row in matrix %}<tr><th>{{ classes[loop.index0] }}</th>{% for n in row %}<td class="num">{{ n }}</td>{% endfor %}</tr>{% endfor %}
+</table>
+{% endfor %}
+
+<h2 id="s13">13. Intervalles de confiance et paramètres</h2>
+<dl>
+  <dt>Méthode</dt><dd>bootstrap {{ settings.method }}, bilatéral, quantiles <code>{{ settings.quantile_method }}</code></dd>
+  <dt>Niveau</dt><dd>{{ settings.confidence_level }}</dd>
+  <dt>Rééchantillonnages</dt><dd>{{ settings.n_resamples }}</dd>
+  <dt>Graine</dt><dd>{{ settings.seed }}</dd>
+  <dt>Unité de rééchantillonnage</dt><dd>{{ settings.unit }} ({{ settings.n_units }} unités)</dd>
+</dl>
+<p class="note">Un intervalle n'est produit que si la métrique est définie sur l'échantillon complet et dans chaque rééchantillonnage.</p>
+
+<h2 id="s14">14. Tests statistiques, hypothèses et limites</h2>
+{% if difference_rows %}
+<h3>Différences appariées Δ = B − A (bootstrap apparié, mêmes tirages pour A et B)</h3>
+<table>
+  <tr><th>Métrique</th><th>Δ</th><th>IC</th><th>Remarques</th></tr>
+  {% for row in difference_rows %}
+  <tr><td><code>{{ row.key }}</code></td>{{ interval(row.cell) }}<td class="note">{{ row.cell.note }}</td></tr>
+  {% endfor %}
+</table>
+<h3>McNemar (informatif, n'entre pas dans les décisions)</h3>
+<dl>
+  <dt>Méthode</dt><dd>{{ mcnemar.method }}</dd>
+  <dt>Paires</dt><dd>deux correctes : {{ mcnemar.both_correct }} · A seule correcte : {{ mcnemar.only_reference_correct }} · B seule correcte : {{ mcnemar.only_candidate_correct }} · deux incorrectes : {{ mcnemar.both_wrong }}</dd>
+  <dt>p-valeur</dt><dd>{% if mcnemar.p_value is none %}non applicable — {{ mcnemar.not_applicable_reason }}{% else %}{{ mcnemar_p }}{% endif %}</dd>
+</dl>
+<p class="note">Hypothèse : paires indépendantes. Une p-valeur élevée ne prouve ni l'équivalence ni l'absence de régression.</p>
+<h3>DeLong</h3>
+<p>{{ delong_status }}</p>
+{% else %}
+<p>Non exécutés : une seule version déclarée.</p>
+{% endif %}
+
+<h2 id="s15">15. Critères d'acceptation définis avant l'analyse</h2>
+<table>
+  <tr><th>Id</th><th>Description</th><th>Type</th><th>Quantité</th><th>Paramètre</th></tr>
+  {% for r in criteria %}
+  <tr><td>{{ r.c.id }}</td><td>{{ r.c.description }}</td><td><code>{{ r.c.kind }}</code></td><td><code>{{ r.quantity }}</code></td><td>{{ r.parameter }}</td></tr>
+  {% endfor %}
+</table>
+<p class="note">Critères lus dans la configuration (SHA-256 <code>{{ config_sha256 }}</code>). L'outil ne peut pas prouver qu'ils ont été fixés avant l'analyse : comparer ce hash à l'historique de versions de la configuration.</p>
+
+<h2 id="s16">16. État de chaque critère et conclusion globale</h2>
+<table>
+  <tr><th>Id</th><th>État</th><th>Estimation</th><th>IC</th><th>Justification</th></tr>
+  {% for r in criteria %}
+  <tr><td>{{ r.c.id }}</td><td><span class="state {{ r.state }}">{{ r.state }}</span></td>{{ interval(r.cell) }}<td>{{ r.reason }}</td></tr>
+  {% endfor %}
+</table>
+<p><strong>Conclusion globale :</strong> <span class="state {{ decision.state }}">{{ decision.state }}</span> — {{ decision.reason }}</p>
+<p class="note">{{ aggregation_rule }} Un critère est INCONCLUSIVE si l'intervalle est indéfini ou de largeur nulle.</p>
+
+<h2 id="s17">17. Justification de la taille d'échantillon</h2>
+<dl>
+  <dt>Taille réelle</dt><dd>{{ n_cases }} cas{% if settings.unit == "patient" %}, {{ settings.n_units }} patients{% endif %}</dd>
+  <dt>Justification</dt><dd>{{ value(sample_size_label) }}</dd>
+  {% if sample_size_text %}<dt>Texte fourni</dt><dd>{{ sample_size_text }}</dd>{% endif %}
+</dl>
+{% if sample_size_warning %}<div class="banner">{{ sample_size_warning }}</div>{% endif %}
+
+<h2 id="s18">18. Résultats des tests de robustesse</h2>
+<p>Non exécutés : cette version de l'outil n'intègre pas de tests de robustesse.</p>
+
+<h2 id="s19">19. Éléments non disponibles ou non exécutés</h2>
+<ul>{% for item in not_available %}<li>{{ item }}</li>{% endfor %}</ul>
+
+<h2 id="s20">20. Limites de l'analyse</h2>
+<ul>{% for item in limitations %}<li>{{ item }}</li>{% endfor %}</ul>
+
+<h2 id="s21">21. What This Report Cannot Establish</h2>
+<ul>{% for item in cannot_establish %}<li>{{ item }}</li>{% endfor %}</ul>
+
+<footer class="note"><p>Généré par MedVision QA {{ run.packages["medvision-qa"] }}. Rapport autonome : aucune ressource externe, aucun script.</p></footer>
+</body>
+</html>

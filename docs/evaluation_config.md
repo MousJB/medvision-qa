@@ -32,6 +32,7 @@ positive = ["glioma", "meningioma", "pituitary"]   # optionnel ; tumeur vs notum
 ground_truth_mode = "separate_file"   # ou "embedded"
 ground_truth_file = "ground_truth.csv"
 description = "Kaggle MRI-BT, dossier Testing/"
+nature = "clinical"           # synthetic | clinical | not_provided (défaut)
 manifest_sha256 = ""          # vide = non fourni, affiché comme tel
 
 [versions.A]
@@ -39,6 +40,7 @@ id = "simplecnn-v1"
 predictions_file = "preds_v1.csv"
 code_commit = ""              # vide = non fourni ; jamais deviné
 weights_sha256 = ""
+preprocessing = "niveaux de gris, écrêtage p1-p99, z-score, 224×224"
 description = ""
 
 [versions.B]
@@ -83,6 +85,12 @@ threshold = 0.90
 Un champ de métadonnées vide (`""`) signifie **non fourni**, et le rapport affiche
 « Not provided ». L'outil ne calcule ni ne devine jamais un commit, un hash, un
 identifiant de modèle ou une provenance qui n'a pas été fourni.
+
+### `data.nature`
+
+`synthetic` affiche en tête du rapport un bandeau « données synthétiques ». `clinical`
+indique des images réelles, ce qui ne dit rien de leur représentativité. `not_provided`
+(défaut) est affiché comme tel.
 
 ### `[statistics]`
 

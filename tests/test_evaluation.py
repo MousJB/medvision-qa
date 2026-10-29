@@ -92,7 +92,7 @@ def test_run_metadata_recorded(scenario):
     result = run_evaluation(scenario(0.85, 0.85, NI + SUP))
     assert len(result.run.run_id) == 36
     assert result.run.started_at_utc.endswith("+00:00")
-    assert set(result.run.packages) == {"medvision-qa", "numpy", "scipy", "scikit-learn"}
+    assert set(result.run.packages) == {"medvision-qa", "numpy", "scipy", "scikit-learn", "jinja2"}
     assert result.config.sample_size.status == "based_on_data_availability"
     assert "non implémenté" in result.delong_status
     assert result.predictions["A"].source.sha256 != result.predictions["B"].source.sha256
