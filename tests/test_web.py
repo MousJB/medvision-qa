@@ -1,6 +1,9 @@
 """Web interface: complete end-to-end workflow with the synthetic demo, in English and Japanese."""
 
+import base64
+import importlib.util
 import re
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -247,3 +250,95 @@ def test_rejection_messages_in_both_languages(client):
 def test_upload_errors_in_japanese(client):
     response = client.post("/evaluations?lang=ja", files=demo_files()[:1])
     assert response.status_code == 400 and "CSV ファイルが指定されていません。" in response.text
+
+
+# Bundled demonstrations (both modes) and the public demo mode used by the Vercel deployment.
+
+@pytest.fixture
+def public_client(tmp_path, monkeypatch):
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))  # where the uploads go, to check they are deleted
+    return TestClient(web.create_app(public_demo=True), follow_redirects=False)
+
+
+def test_demo_pages_computed_from_committed_files(client):
+    synthetic = client.get("/demo/synthetic")
+    assert synthetic.status_code == 200
+    assert "SATISFIED" in synthetic.text and "demo-cnn-v2" in synthetic.text and "Synthetic data" in synthetic.text
+    mri = client.get("/demo/brain-mri")
+    assert mri.status_code == 200
+    assert 'class="state INCONCLUSIVE"' in mri.text and "resnet18-figshare-v1" in mri.text
+    assert "64 patients" in mri.text and "says nothing about clinical performance" in mri.text
+    assert "<script" not in synthetic.text + mri.text
+
+
+def test_demo_reports(client):
+    report = client.get("/demo/brain-mri/report?lang=ja")
+    assert report.status_code == 200 and '<html lang="ja">' in report.text
+    assert "form-action 'none'" in report.headers["content-security-policy"]
+    download = client.get("/demo/synthetic/report/download")
+    assert 'filename="VVR-synthetic.html"' in download.headers["content-disposition"]
+    assert "What This Report Cannot Establish" in download.text
+    assert client.get("/demo/unknown").status_code == 404
+    assert client.get("/demo/unknown/report").status_code == 404
+
+
+def test_public_home_has_no_history_and_warns(public_client):
+    page = public_client.get("/").text
+    assert "public demo · research prototype · not for clinical use" in page
+    assert "Do not upload patient data" in page and "No evaluations yet." not in page
+    assert "local use" not in page and "<script" not in page
+    assert "公開デモ" in public_client.get("/?lang=ja").text
+
+
+def test_public_upload_returns_reports_and_keeps_nothing(public_client, tmp_path):
+    response = public_client.post("/evaluations", files=demo_files())
+    assert response.status_code == 200
+    assert "SATISFIED" in response.text and "Nothing was stored" in response.text
+    run_id = re.search(r"VVR-([0-9a-f-]{36})\.html", response.text).group(1)
+    uris = re.findall(r'href="data:text/html;charset=utf-8;base64,([A-Za-z0-9+/=]+)" download="VVR-', response.text)
+    reports = [base64.b64decode(u).decode("utf-8") for u in uris]
+    assert len(reports) == 2 and '<html lang="en">' in reports[0] and '<html lang="ja">' in reports[1]
+    assert all(run_id in r and "What This Report Cannot Establish" in r for r in reports)
+    assert list(tmp_path.iterdir()) == []
+    assert public_client.get(f"/evaluations/{run_id}").status_code == 404
+    assert run_id not in public_client.get("/").text
+
+
+def test_public_rejections(public_client, tmp_path):
+    lines = (DEMO / "preds_v2.csv").read_bytes().splitlines(keepends=True)
+    response = public_client.post("/evaluations", files=demo_files({"preds_v2.csv": b"".join(lines[:-1])}))
+    assert response.status_code == 422 and "[same_cases]" in response.text
+    assert "[same_cases] preds_v2.csv, column" in response.text  # file name only, not the server's folder
+    assert "medvision-qa-" not in response.text and str(tmp_path) not in response.text
+    config = (DEMO / "config.toml").read_bytes().replace(b"bootstrap_resamples = 2000", b"bootstrap_resamples = 2001")
+    response = public_client.post("/evaluations", files=demo_files({"config.toml": config}))
+    assert response.status_code == 422 and "at most 2000 bootstrap resamples" in response.text
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_public_upload_size_limit(public_client, monkeypatch):
+    monkeypatch.setattr(web, "PUBLIC_MAX_FILE_BYTES", 1000)
+    response = public_client.post("/evaluations", files=demo_files())
+    assert response.status_code == 413 and "exceeds" in response.text
+
+
+def test_errors_are_readable_pages(monkeypatch):
+    def fail(*args, **kwargs):
+        raise RuntimeError("unexpected")
+
+    monkeypatch.setattr(web, "run_evaluation", fail)
+    client = TestClient(web.create_app(public_demo=True), raise_server_exceptions=False)
+    response = client.post("/evaluations", files=demo_files())
+    assert response.status_code == 500 and "Something went wrong" in response.text
+    assert "unexpected" not in response.text  # no internal detail shown
+    missing = client.get("/no/such/page?lang=ja")
+    assert missing.status_code == 404 and "見つかりません" in missing.text
+
+
+def test_vercel_entry_point():
+    spec = importlib.util.spec_from_file_location("vercel_entry", ROOT / "app.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    client = TestClient(module.app)
+    assert "public demo" in client.get("/").text
+    assert client.get("/examples/config.toml").status_code == 200

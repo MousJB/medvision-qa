@@ -33,3 +33,7 @@ reports/
 
 # Web interface: local evaluations and history
 medvision_data/
+
+# Vercel CLI: project link and downloaded tokens, never committed
+.vercel
+.env*

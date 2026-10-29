@@ -1,0 +1,17 @@
+# Upload only what the public demo needs: never data/, model weights, local
+# environments, evaluation history or caches.
+/*
+!/app.py
+!/vercel.json
+!/.python-version
+!/pyproject.toml
+!/uv.lock
+!/requirements-lock.txt
+!/README.md
+!/LICENSE
+!/src
+!/examples
+!/experiments
+/src/*.egg-info
+__pycache__/
+*.py[cod]

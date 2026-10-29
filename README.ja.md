@@ -13,6 +13,11 @@
 > **MedVision QA は医療機器ではありません。** 診断ツール、臨床的妥当性確認、規制適合
 > （ISO 13485、FDA QMSR など）の証明のいずれでもありません。
 
+**公開デモ: <https://medvision-qa.vercel.app/?lang=ja>**（日本語・英語、ログイン不要）。
+合成データの例と実際の脳 MRI の評価を、ワンクリックでサーバー上で実行します。自分のファイルも
+アップロードできます。研究用プロトタイプであり、臨床使用はできません。詳細は
+[公開デモ](#公開デモ)を参照してください。
+
 ## エンジニアリング上の方針
 
 以下の設計上の選択は、いずれもコード、テスト、または git の履歴で確認できます。
@@ -63,6 +68,27 @@ python -m medvision_qa examples/synthetic_demo/config.toml -o reports/demo.html
 [examples/synthetic_demo/](examples/synthetic_demo/) の CSV は**合成データ**です（450 患者、
 872 枚の模擬画像）。`python examples/synthetic_demo/generate.py` でバイト単位まで同じものを
 再生成できます。レポートにもその旨が注意書きとして表示されます。
+
+### 公開デモ
+
+<https://medvision-qa.vercel.app/?lang=ja> は、同じ Web インターフェースを、状態を持たない
+公開モードで提供します（[app.py](app.py) の `create_app(public_demo=True)`）。
+
+- `/demo/synthetic` と `/demo/brain-mri` は、このリポジトリに含まれるファイルから、サーバー上で
+  評価を実行します（サーバーインスタンスの最初のリクエストで約 10 秒）。オンラインで計算した
+  脳 MRI のレポートは、[リポジトリ内のレポート](experiments/brain_mri/figshare_eval/report.ja.html)
+  と、実行 ID、日時、Python のパッチバージョンを除いて同一です。
+- アップロードされたファイルは一時フォルダーで評価され、応答の送信前に削除されます。履歴はなく、
+  何も保存されません。2 つのレポートは結果ページの中で返されます。
+- このデプロイでの制限: 1 リクエストあたり 4 MB（プラットフォームの上限）、ブートストラップの
+  再標本化は最大 2,000 回、1 リクエストあたり 60 秒。Web ページに JavaScript は含まれません。
+  Version Verification Record は横に広い文書のため、スマートフォンでは大きな表が横スクロールになります。
+
+デプロイ: Vercel の Python ランタイム、関数 1 つ。[vercel.json](vercel.json) で実行時間の上限を
+設定し、[uv.lock](uv.lock) は [requirements-lock.txt](requirements-lock.txt) と同じバージョンを
+固定します。[.vercelignore](.vercelignore) により、デモに必要なファイルだけをアップロードします
+（`data/`、重み、ローカル環境は決してアップロードしません）。環境変数やシークレットは不要です。
+Vercel プロジェクトにリンクしたクローンから再デプロイするには: `vercel deploy --prod`。
 
 ## 使い方
 
@@ -133,7 +159,8 @@ CSV ファイル ─► validation.py        すべての違反を収集し、�
                decision_engine.py   信頼区間の境界のみから SATISFIED / NOT_SATISFIED / INCONCLUSIVE
                evaluation.py        上記の手順を実行し、実行 ID、日時、パッケージのバージョンを記録
                report.py + templates/   Version Verification Record（HTML、英語または日本語）
-               web.py + history.py  ローカル FastAPI インターフェース、SQLite 履歴
+               web.py + history.py  FastAPI インターフェース: ローカル（SQLite 履歴）または公開デモ（状態なし）
+app.py      ─► Vercel 上の公開デモのエントリーポイント
                duplicates.py        完全重複（SHA-256）と準重複（pHash）の検出
 ```
 
@@ -178,9 +205,10 @@ pytest
 
 ## データとセキュリティ
 
-- ローカルでのみ実行します。データの分析のために、ネットワーク、LLM、外部 API を呼び出すことは
-  ありません。Web インターフェースは `127.0.0.1` でのみ待ち受け、認証機能がないため、ネットワーク
-  に公開してはいけません。
+- データの分析のために、ネットワーク、LLM、外部 API を呼び出すことはありません。ローカルの
+  Web インターフェースは `127.0.0.1` でのみ待ち受け、認証機能がなく履歴を共有するため、ネットワーク
+  に公開してはいけません。公開を前提としているのは公開デモモードだけです。このモードは何も保存せず、
+  履歴も持たず、患者データをアップロードしないよう利用者に求めています。
 - データセットは同梱せず、自動でダウンロードすることもありません。`.gitignore` で `data/`、
   医用画像、モデルの重みを除外しています。
 - pickle ファイルやモデルは読み込みません。読み込むのは CSV と TOML 設定ファイルのみです。

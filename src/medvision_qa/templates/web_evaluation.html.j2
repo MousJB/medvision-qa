@@ -4,21 +4,21 @@
 <h1>{{ record.title }}</h1>
 <p class="muted">{{ _("r.run") }} <code>{{ record.run_id }}</code> · {{ record.created_at_utc }} UTC · {{ _("web.cases_n", n=record.n_cases) }} ·
 <code>{{ record.version_a }}</code>{% if record.version_b %} → <code>{{ record.version_b }}</code>{% endif %}</p>
+{% if note %}<p class="notice">{{ tr(note) }}</p>{% endif %}
 
 <p><strong>{{ _("r.overall") }}</strong> {{ state(record.decision) }} — {{ tr(decision_reason) }}</p>
 
-<table>
+<div class="scroll"><table>
   <tr><th>{{ _("web.col_criterion") }}</th><th>{{ _("r.quantity") }}</th><th>{{ _("r.state") }}</th><th>{{ _("r.justification") }}</th></tr>
   {% for c in criteria %}
   <tr><td>{{ c.id }} — {{ c.description }}</td><td><code>{{ c.quantity }}</code></td>
       <td>{{ state(c.state) }}</td><td>{{ tr(c.reason) }}</td></tr>
   {% endfor %}
-</table>
+</table></div>
 
 <p class="actions">
-  <a href="{{ url('/evaluations/' ~ record.run_id ~ '/report') }}">{{ _("web.open_report") }}</a>
-  <a href="{{ url('/evaluations/' ~ record.run_id ~ '/report/download') }}">{{ _("web.download_report") }}</a>
-  <a href="{{ url('/') }}">{{ _("web.new_evaluation") }}</a>
+  {% for a in actions %}<a href="{{ a.href }}"{% if a.get("download") %} download="{{ a.download }}"{% endif %}>{{ a.label }}</a>
+  {% endfor %}<a href="{{ url('/') }}">{{ _("web.new_evaluation") }}</a>
 </p>
 <p class="note">{{ _("web.report_note") }} <code>{{ record.config_sha256 }}</code></p>
 {% endblock %}

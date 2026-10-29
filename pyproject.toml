@@ -30,6 +30,16 @@ dev = [
     "httpx2",
 ]
 
+[dependency-groups]
+# Installed by default by `uv sync`, which the Vercel deployment runs (app.py, uv.lock).
+deploy = ["medvision-qa[web]"]
+
+[tool.uv]
+default-groups = ["deploy"]
+# Rebuild the package when its sources change, not only pyproject.toml (the deployment
+# build cache would otherwise reinstall a stale build of the same version).
+cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.py" }, { file = "src/**/*.j2" }]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

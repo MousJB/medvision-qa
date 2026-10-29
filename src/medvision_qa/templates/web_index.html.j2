@@ -1,6 +1,25 @@
 {% extends "web_layout.html.j2" %}
 {% block content %}
-<h1>{{ _("web.new_evaluation") }}</h1>
+<h1>{{ _("web.headline") }}</h1>
+<p class="lead">{{ _("web.tagline") }}</p>
+<ul>
+  <li>{{ _("web.feature_validation") }}</li>
+  <li>{{ _("web.feature_intervals") }}</li>
+  <li>{{ _("web.feature_decision") }}</li>
+  <li>{{ _("web.feature_report") }}</li>
+</ul>
+
+<h2>{{ _("web.try_title") }}</h2>
+<div class="cards">
+  <a class="card" href="{{ url('/demo/synthetic') }}"><strong>{{ _("web.demo_synthetic_title") }} →</strong><br>
+    <span class="muted">{{ _("web.demo_synthetic_text") }}</span></a>
+  <a class="card" href="{{ url('/demo/brain-mri') }}"><strong>{{ _("web.demo_mri_title") }} →</strong><br>
+    <span class="muted">{{ _("web.demo_mri_text") }}</span></a>
+</div>
+<p class="note">{{ _("web.try_note") }}</p>
+
+<h2>{{ _("web.new_evaluation") }}</h2>
+{% if public %}<p class="notice">{{ _("web.public_notice") }}</p>{% endif %}
 <p>{{ _("web.intro") }} <code>ground_truth_file = "ground_truth.csv"</code></p>
 
 {% if errors %}
@@ -12,18 +31,24 @@
   <input id="config" name="config" type="file" accept=".toml" required>
   <label for="data_files">{{ _("web.csv_label", max=max_files) }}</label>
   <input id="data_files" name="data_files" type="file" accept=".csv" multiple required>
+  {% if public %}
+  <p class="note">{{ _("web.public_limits", mb=max_mb, max=max_resamples) }}</p>
+  {% else %}
   <p class="note">{{ _("web.size_note", mb=max_mb) }}</p>
+  {% endif %}
   <button type="submit">{{ _("web.submit") }}</button>
 </form>
 
 {% set docs = "docs/ja/" if lang == "ja" else "docs/" %}
 <p class="note">{{ _("web.examples") }}
 {% for name in example_files %}<a href="/examples/{{ name }}">{{ name }}</a>{{ " · " if not loop.last else "" }}{% endfor %}.
-{{ _("web.format_docs") }} <code>{{ docs }}data_format.md</code>, <code>{{ docs }}evaluation_config.md</code></p>
+{{ _("web.format_docs") }} <a href="{{ github }}/blob/main/{{ docs }}data_format.md"><code>{{ docs }}data_format.md</code></a>,
+<a href="{{ github }}/blob/main/{{ docs }}evaluation_config.md"><code>{{ docs }}evaluation_config.md</code></a></p>
 
+{% if not public %}
 <h2>{{ _("web.history") }}</h2>
 {% if history %}
-<table>
+<div class="scroll"><table>
   <tr><th>{{ _("web.col_date") }}</th><th>{{ _("web.col_evaluation") }}</th><th>{{ _("web.col_versions") }}</th><th>{{ _("web.col_cases") }}</th><th>{{ _("web.col_decision") }}</th></tr>
   {% for r in history %}
   <tr>
@@ -40,8 +65,18 @@
     {% endif %}
   </tr>
   {% endfor %}
-</table>
+</table></div>
 {% else %}
 <p class="muted">{{ _("web.no_history") }}</p>
 {% endif %}
+{% endif %}
+
+<h2>{{ _("web.limits_title") }}</h2>
+<ul>
+  <li>{{ _("web.limit_status") }}</li>
+  <li>{{ _("web.limit_predictions") }}</li>
+  <li>{{ _("web.limit_statistics") }}</li>
+  <li>{{ _("web.limit_open") }}</li>
+</ul>
+<p>{{ _("web.links") }} <a href="{{ github }}">{{ github }}</a></p>
 {% endblock %}
