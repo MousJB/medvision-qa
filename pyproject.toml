@@ -21,8 +21,11 @@ web = [
     "uvicorn>=0.30",
     "python-multipart>=0.0.9",
 ]
+images = [
+    "pillow>=10",
+]
 dev = [
-    "medvision-qa[web]",
+    "medvision-qa[web,images]",
     "pytest>=8",
     "httpx2",
 ]
