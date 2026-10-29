@@ -17,18 +17,37 @@ Record*.
 | Phase | Contenu | État |
 |---|---|---|
 | 0 | Cadrage, formats, environnement | terminée |
-| 1 | Validation CSV, métriques, intervalles de confiance | à faire |
+| 1 | Validation CSV, métriques, intervalles de confiance | terminée (API Python) |
 | 2 | Comparaison statistique, moteur de décision | à faire |
 | 3 | Rapport HTML | à faire |
 | 4 | Analyse d'images IRM (conditionnelle) | à faire |
 | 5 | Interface FastAPI | à faire |
 
-Aucune fonctionnalité d'évaluation n'est encore implémentée.
+Pas encore d'interface ni de lecture de la configuration TOML : la Phase 1 s'utilise
+depuis Python.
+
+```python
+from medvision_qa.classes import ClassSpec
+from medvision_qa.validation import load_ground_truth, load_predictions
+from medvision_qa.alignment import align
+from medvision_qa.confidence_intervals import bootstrap_metrics
+
+classes = ClassSpec(("glioma", "meningioma", "notumor", "pituitary"),
+                    positive=("glioma", "meningioma", "pituitary"))
+data = align(classes,
+             {"A": load_predictions("preds_v1.csv", classes)},
+             load_ground_truth("ground_truth.csv", classes))
+result = bootstrap_metrics(data, "A", n_resamples=2000, confidence_level=0.95, seed=20261029)
+```
+
+Une entrée invalide lève `ValidationError`, dont `.issues` liste toutes les violations
+(fichier, ligne, colonne, valeur, règle).
 
 ## Documentation
 
 - [MEDVISION_QA.md](MEDVISION_QA.md) : spécification complète
 - [docs/data_format.md](docs/data_format.md) : format des CSV d'entrée et règles de validation
+- [docs/metrics.md](docs/metrics.md) : définitions des métriques, cas indéfinis, bootstrap, limites
 - [docs/evaluation_config.md](docs/evaluation_config.md) : configuration, critères d'acceptation, règles de décision
 - [docs/phase0_inspection.md](docs/phase0_inspection.md) : inspection de l'environnement, du dépôt IRM et du dataset
 

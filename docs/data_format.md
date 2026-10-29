@@ -1,7 +1,12 @@
 # Format des fichiers d'entrée — v0.1
 
-Statut : **défini en Phase 0, pas encore implémenté.** La Phase 1 implémente ces règles et
-les tests associés. Toute règle modifiée en Phase 1 doit être mise à jour ici.
+Statut : défini en Phase 0, **implémenté en Phase 1** (`src/medvision_qa/validation.py`,
+`src/medvision_qa/alignment.py`), testé dans `tests/test_validation.py` et
+`tests/test_alignment.py`. Lecture avec le module standard `csv` (pas pandas), pour
+éviter toute conversion implicite.
+
+« Ligne » désigne la ligne physique du fichier (1 = en-tête). Elle peut différer du
+numéro d'enregistrement si un champ entre guillemets contient un saut de ligne.
 
 Principe général : **toute violation est une erreur bloquante.** Aucune ligne n'est
 supprimée, aucune valeur n'est corrigée, normalisée ou remplacée silencieusement.
