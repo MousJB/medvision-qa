@@ -53,6 +53,10 @@ B の特異度は低い（区間はゼロを含まない）ものの、事前登
 | `report.html`、`report.ja.html` | cxr リポジトリで生成した Version Verification Record（同リポジトリでは `reports/vvr_en.html`、`reports/vvr_ja.html`） |
 | `test_results.md` | cxr リポジトリのテストの全表（ボックス指標、誤り分析、英語） |
 
+これらのファイルに記載された `code_commit`（`afe4b6d…`）と `abfc675` は cxr リポジトリの元の履歴の
+ハッシュです。コミットメッセージの書き換え後はそれぞれ `16d087a`、`a0ea6d6` です（ファイルは同一。
+対応表は同リポジトリの README の「コミットハッシュ」節）。
+
 データ：RSNA Pneumonia Detection Challenge のコンペティション規約（非商用利用に限る、画像の
 再配布禁止）。画像は含まれていません。
 

@@ -54,6 +54,10 @@ margin of 0.05; at the same τ = 0.80, B flags more images than A. The AUROC is 
 | `report.html`, `report.ja.html` | Version Verification Records generated in the cxr repository (`reports/vvr_en.html`, `reports/vvr_ja.html` there) |
 | `test_results.md` | full test tables of the cxr repository (box metrics, error analysis) |
 
+The `code_commit` values (`afe4b6d…`) and `abfc675` cited in these files refer to the original
+history of the cxr repository; after a rewrite of its commit messages they are `16d087a` and
+`a0ea6d6` (same files; table in its README, section *Commit hashes*).
+
 Data: RSNA Pneumonia Detection Challenge, competition rules (non-commercial use, no
 redistribution of the images). No image is included.
 
