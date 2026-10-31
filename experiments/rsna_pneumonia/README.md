@@ -35,7 +35,7 @@ the score ≥ τ). The box-level competition metric is reported in the cxr repos
 
 Values from the Version Verification Records. The cxr repository's own bootstrap
 (`scripts/evaluate.py`, [test_results.md](test_results.md)) gives the same point estimates
-and slightly different intervals (by at most 0.002; different resampling code). It also
+and intervals of B − A within 0.002 of these (different resampling code). It also
 gives the box-level competition metric (A 0.2053, B 0.2190, B − A +0.0137 [+0.0040, +0.0238]:
 non-inferior, margin 0.02). Reports:
 [English](report.html), [Japanese](report.ja.html).
