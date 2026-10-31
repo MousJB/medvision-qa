@@ -2,7 +2,7 @@
 
 [日本語](ja/audit.md)
 
-Scope: the whole repository at commit `ea6a4cf` (software, CSV validation, metrics,
+Scope: the whole repository at commit `d64950b` (software, CSV validation, metrics,
 bootstrap, paired comparison, decision engine, HTML report, web interface, MRI
 experiment). Everything below was run on Windows 10, Python 3.12.6. Nothing here is a
 clinical validation or a regulatory assessment.
@@ -35,7 +35,7 @@ clinical validation or a regulatory assessment.
   groups, 695 pairs, 365 Training ↔ Testing pairs, 216 / 1,311 Testing images with a copy
   in Training (meningioma 106, no-tumor 105, pituitary 5), 0 group with conflicting labels.
   These are the values given in the experiment README.
-- **Pre-registration**: `git diff 6de2a12 HEAD -- figshare_eval/config.toml` changes only
+- **Pre-registration**: `git diff 06b332f HEAD -- figshare_eval/config.toml` changes only
   comments, free text and the metadata filled in after training (commits, weight hashes,
   manifest hash). Classes, statistics, sample size and criteria are unchanged.
 - **figshare licence**: `data/figshare/article.json` (downloaded figshare metadata) gives
@@ -74,7 +74,7 @@ No P0 finding. Every finding below is fixed, except those marked "not fixed".
   bootstrap.
 - **Multiplicity**: criteria are evaluated without correction; the report says so. The
   overall SATISFIED requires every criterion to be satisfied.
-- **Pre-registration** can only be checked through the git history (commit `6de2a12`);
+- **Pre-registration** can only be checked through the git history (commit `06b332f`);
   the tool cannot prove it.
 - The report was checked through HTTP and its content, not visually in every browser.
 - macOS was not tested.

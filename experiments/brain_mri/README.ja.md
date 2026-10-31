@@ -3,7 +3,7 @@
 [English](README.md)
 
 学習前に確定したプロトコル: [PROTOCOL.ja.md](PROTOCOL.ja.md) と
-[figshare_eval/config.toml](figshare_eval/config.toml)（コミット `6de2a12`）。データソースと
+[figshare_eval/config.toml](figshare_eval/config.toml)（コミット `06b332f`）。データソースと
 ライセンス: [docs/ja/phase4_data_sources.md](../../docs/ja/phase4_data_sources.md)。
 
 > データ: figshare「brain tumor dataset」、Jun Cheng、v8、**CC BY 4.0**、
@@ -165,8 +165,8 @@ pHash は脳 MRI には緩すぎます。類似を示すだけで、何も証明
 テキストのみです: コメント、メッセージ、`config.toml` 内の説明、`training_*.json` の説明用
 フィールド（`augmentation`、`selection`、`determinism`）、`mri_bt_audit/summary.json` の
 「within」キー。数値、ハッシュ、基準、閾値はすべて変更していません。元のフランス語のファイルは
-git の履歴（コミット `3a387f5` 以前）に残っています。レポートは翻訳後の設定ファイルから
-再生成したため、設定ファイルのハッシュはコミット `6de2a12` のものとは異なります。
+git の履歴（コミット `ea4dbbe` 以前）に残っています。レポートは翻訳後の設定ファイルから
+再生成したため、設定ファイルのハッシュはコミット `06b332f` のものとは異なります。
 `config.ja.toml` は `config.toml` の日本語版で、数値は同一です（`report.ja.html` の生成に使用）。
 
 **2026-10-29 の監査。** 以前の `summary.json` は、グループ内の同一ペアを最初のファイルとの

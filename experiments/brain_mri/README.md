@@ -3,7 +3,7 @@
 [日本語](README.ja.md)
 
 Protocol fixed before training: [PROTOCOL.md](PROTOCOL.md) and
-[figshare_eval/config.toml](figshare_eval/config.toml) (commit `6de2a12`). Sources and
+[figshare_eval/config.toml](figshare_eval/config.toml) (commit `06b332f`). Sources and
 licences: [docs/phase4_data_sources.md](../../docs/phase4_data_sources.md).
 
 > Data: figshare "brain tumor dataset", Jun Cheng, v8, **CC BY 4.0**,
@@ -172,9 +172,9 @@ the evaluation. Only free text changed: comments, messages, descriptions in
 `config.toml`, the descriptive fields `augmentation`, `selection` and `determinism` of
 `training_*.json`, and the "within" keys of `mri_bt_audit/summary.json`. Every number,
 hash, criterion and threshold is unchanged; the original French files remain in the git
-history (commit `3a387f5` and earlier). The reports were regenerated from the translated
+history (commit `ea4dbbe` and earlier). The reports were regenerated from the translated
 configuration, which is why their configuration hash differs from the one of commit
-`6de2a12`.
+`06b332f`.
 
 **Audit of 2026-10-29.** `summary.json` used to count the identical pairs of a group from
 its first file only (263 Training ↔ Testing pairs), while this README gave every pair
