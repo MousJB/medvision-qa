@@ -29,3 +29,4 @@ def test_documents_exist_in_english_and_japanese():
         assert (ROOT / "docs" / "ja" / doc).is_file(), doc
     for doc in ("README", "PROTOCOL"):
         assert (ROOT / "experiments" / "brain_mri" / f"{doc}.ja.md").is_file(), doc
+    assert (ROOT / "experiments" / "rsna_pneumonia" / "README.ja.md").is_file()

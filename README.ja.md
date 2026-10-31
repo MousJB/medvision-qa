@@ -50,6 +50,16 @@ ResNet18 は SimpleCNN に劣らず、AUROC も優れていますが、神経膠
 [日本語](experiments/brain_mri/figshare_eval/report.ja.html)、
 [英語](experiments/brain_mri/figshare_eval/report.html)。
 
+## 実胸部 X 線データでの結果
+
+RSNA Pneumonia Detection Challenge のデータで学習した 2 つの肺野陰影検出器（Faster R-CNN、512 px と
+384 px）を、患者単位で分離したテスト分割（2,290 患者、5,349 枚）で、学習前に定めた基準により評価した
+結果は **SATISFIED** でした。画像単位で、384 px 版は AUROC、感度、特異度のいずれも劣っていません
+（特異度は 1.4 ポイント低いものの、マージン 0.05 の範囲内）。詳細:
+[experiments/rsna_pneumonia/README.ja.md](experiments/rsna_pneumonia/README.ja.md)。レポート:
+[日本語](experiments/rsna_pneumonia/reports/vvr_ja.html)、
+[英語](experiments/rsna_pneumonia/reports/vvr_en.html)。
+
 ## デモ（合成データ）
 
 Web インターフェース（ファイルのアップロード、結果、履歴、レポートのダウンロード。英語・日本語）:
@@ -74,8 +84,9 @@ python -m medvision_qa examples/synthetic_demo/config.toml -o reports/demo.html
 <https://medvision-qa.vercel.app/?lang=ja> は、同じ Web インターフェースを、状態を持たない
 公開モードで提供します（[app.py](app.py) の `create_app(public_demo=True)`）。
 
-- `/demo/synthetic` と `/demo/brain-mri` は、このリポジトリに含まれるファイルから、サーバー上で
-  評価を実行します（サーバーインスタンスの最初のリクエストで約 10 秒）。オンラインで計算した
+- `/demo/synthetic`、`/demo/brain-mri`、`/demo/rsna-pneumonia` は、このリポジトリに含まれる
+  ファイルから、サーバー上で評価を実行します（サーバーインスタンスの最初のリクエストで約 10 秒、
+  胸部 X 線 5,349 枚では約 20 秒）。オンラインで計算した
   脳 MRI のレポートは、[リポジトリ内のレポート](experiments/brain_mri/figshare_eval/report.ja.html)
   と、実行 ID、日時、Python のパッチバージョンを除いて同一です。
 - アップロードされたファイルは一時フォルダーで評価され、応答の送信前に削除されます。履歴はなく、

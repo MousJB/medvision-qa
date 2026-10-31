@@ -52,6 +52,16 @@ the Kaggle MRI-BT dataset. Details:
 [English](experiments/brain_mri/figshare_eval/report.html),
 [Japanese](experiments/brain_mri/figshare_eval/report.ja.html).
 
+## Result on real chest X-ray data
+
+Two lung-opacity detectors (Faster R-CNN at 512 px and 384 px) trained on the RSNA Pneumonia
+Detection Challenge data, patient-disjoint test split (2,290 patients, 5,349 images), criteria
+fixed before training: **SATISFIED**. At image level, the 384 px version is not inferior in
+AUROC, sensitivity and specificity (its specificity is 1.4 points lower, within the 0.05
+margin). Details: [experiments/rsna_pneumonia/README.md](experiments/rsna_pneumonia/README.md).
+Reports: [English](experiments/rsna_pneumonia/reports/vvr_en.html),
+[Japanese](experiments/rsna_pneumonia/reports/vvr_ja.html).
+
 ## Demo (synthetic data)
 
 Web interface (file upload, result, history, report download; English or Japanese):
@@ -76,8 +86,9 @@ The CSV files in [examples/synthetic_demo/](examples/synthetic_demo/) are **synt
 <https://medvision-qa.vercel.app> serves the same web interface in a public, stateless mode
 (`create_app(public_demo=True)` in [app.py](app.py)):
 
-- `/demo/synthetic` and `/demo/brain-mri` run the evaluation on the server from the files
-  committed in this repository (about 10 s on the first request of a server instance). The
+- `/demo/synthetic`, `/demo/brain-mri` and `/demo/rsna-pneumonia` run the evaluation on the
+  server from the files committed in this repository (on the first request of a server
+  instance: about 10 s, about 20 s for the 5,349 chest X-rays). The
   brain MRI report computed online is identical to
   [the committed one](experiments/brain_mri/figshare_eval/report.html) except for the run
   identifier, the date and the Python patch version.
