@@ -59,8 +59,8 @@ Detection Challenge data, patient-disjoint test split (2,290 patients, 5,349 ima
 fixed before training: **SATISFIED**. At image level, the 384 px version is not inferior in
 AUROC, sensitivity and specificity (its specificity is 1.4 points lower, within the 0.05
 margin). Details: [experiments/rsna_pneumonia/README.md](experiments/rsna_pneumonia/README.md).
-Reports: [English](experiments/rsna_pneumonia/reports/vvr_en.html),
-[Japanese](experiments/rsna_pneumonia/reports/vvr_ja.html).
+Reports: [English](experiments/rsna_pneumonia/report.html),
+[Japanese](experiments/rsna_pneumonia/report.ja.html).
 
 ## Demo (synthetic data)
 

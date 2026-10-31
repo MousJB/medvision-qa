@@ -38,7 +38,7 @@ Values from the Version Verification Records. The cxr repository's own bootstrap
 and slightly different intervals (by at most 0.002; different resampling code). It also
 gives the box-level competition metric (A 0.2053, B 0.2190, B − A +0.0137 [+0.0040, +0.0238]:
 non-inferior, margin 0.02). Reports:
-[English](reports/vvr_en.html), [Japanese](reports/vvr_ja.html).
+[English](report.html), [Japanese](report.ja.html).
 
 The specificity of B is lower (the interval excludes zero) but within the pre-registered
 margin of 0.05; at the same τ = 0.80, B flags more images than A. The AUROC is unchanged.
@@ -51,7 +51,7 @@ margin of 0.05; at the same τ = 0.80, B flags more images than A. The AUROC is 
 | `config.ja.toml` | same values, free text in Japanese |
 | `medvision/ground_truth.csv` | `case_id`, label, NIH patient, view, sex, age (no image) |
 | `medvision/preds_r50_512.csv`, `medvision/preds_r50_384.csv` | image-level predictions of A and B |
-| `reports/` | Version Verification Records generated in the cxr repository |
+| `report.html`, `report.ja.html` | Version Verification Records generated in the cxr repository (`reports/vvr_en.html`, `reports/vvr_ja.html` there) |
 | `test_results.md` | full test tables of the cxr repository (box metrics, error analysis) |
 
 Data: RSNA Pneumonia Detection Challenge, competition rules (non-commercial use, no

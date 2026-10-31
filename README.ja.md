@@ -57,8 +57,8 @@ RSNA Pneumonia Detection Challenge のデータで学習した 2 つの肺野陰
 結果は **SATISFIED** でした。画像単位で、384 px 版は AUROC、感度、特異度のいずれも劣っていません
 （特異度は 1.4 ポイント低いものの、マージン 0.05 の範囲内）。詳細:
 [experiments/rsna_pneumonia/README.ja.md](experiments/rsna_pneumonia/README.ja.md)。レポート:
-[日本語](experiments/rsna_pneumonia/reports/vvr_ja.html)、
-[英語](experiments/rsna_pneumonia/reports/vvr_en.html)。
+[日本語](experiments/rsna_pneumonia/report.ja.html)、
+[英語](experiments/rsna_pneumonia/report.html)。
 
 ## デモ（合成データ）
 

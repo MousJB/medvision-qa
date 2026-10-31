@@ -37,7 +37,7 @@ MedVision QA は画像単位で評価するため、各画像のスコアは最�
 （`scripts/evaluate.py`、[test_results.md](test_results.md)）では、点推定値は同じで、区間はわずかに
 異なります（差は最大 0.002。再標本化のコードが異なるため）。同ファイルにはボックス単位の
 コンペティション指標も記載しています（A 0.2053、B 0.2190、B − A +0.0137 [+0.0040, +0.0238]：非劣性、マージン 0.02）。レポート：
-[日本語](reports/vvr_ja.html)、[英語](reports/vvr_en.html)。
+[日本語](report.ja.html)、[英語](report.html)。
 
 B の特異度は低い（区間はゼロを含まない）ものの、事前登録したマージン 0.05 の範囲内です。
 同じ τ = 0.80 において、B は A より多くの画像を陽性と判定します。AUROC は変わりません。
@@ -50,7 +50,7 @@ B の特異度は低い（区間はゼロを含まない）ものの、事前登
 | `config.ja.toml` | 同じ値、自由記述は日本語 |
 | `medvision/ground_truth.csv` | `case_id`、ラベル、NIH の患者、撮影方向、性別、年齢（画像なし） |
 | `medvision/preds_r50_512.csv`、`medvision/preds_r50_384.csv` | A と B の画像単位の予測 |
-| `reports/` | cxr リポジトリで生成した Version Verification Record |
+| `report.html`、`report.ja.html` | cxr リポジトリで生成した Version Verification Record（同リポジトリでは `reports/vvr_en.html`、`reports/vvr_ja.html`） |
 | `test_results.md` | cxr リポジトリのテストの全表（ボックス指標、誤り分析、英語） |
 
 データ：RSNA Pneumonia Detection Challenge のコンペティション規約（非商用利用に限る、画像の
