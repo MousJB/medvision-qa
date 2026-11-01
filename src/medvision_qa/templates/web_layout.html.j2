@@ -16,7 +16,7 @@
   h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 28px; }
   a { color: var(--accent); }
   .muted, .note { color: var(--muted); } .note { font-size: .85rem; }
-  code { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; overflow-wrap: anywhere; }
   table { border-collapse: collapse; width: 100%; font-size: .9rem; }
   th, td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
   th { background: var(--bg-alt); }
@@ -30,17 +30,31 @@
   form.upload { border: 1px solid var(--line); padding: 16px; background: var(--bg-alt); }
   form.upload label { display: block; font-weight: 600; margin-top: 12px; }
   button { margin-top: 16px; padding: 6px 16px; font: inherit; font-weight: 600; cursor: pointer; }
-  .actions a { margin-right: 16px; }
+  .actions a { display: inline-block; margin: 0 16px 8px 0; }
   footer { margin-top: 40px; border-top: 1px solid var(--line); }
+  .lead { font-size: 1.05rem; }
+  .scroll { overflow-x: auto; }
+  .scroll code { overflow-wrap: normal; }
+  .notice { border-left: 4px solid var(--inc); background: var(--inc-bg); padding: 8px 16px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  a.card { display: block; border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px;
+           color: var(--fg); text-decoration: none; }
+  a.card:hover, a.card:focus { border-color: var(--accent); background: var(--bg-alt); }
+  a.card strong { color: var(--accent); }
+  input[type=file] { max-width: 100%; }
+  @media (max-width: 600px) {
+    body { padding: 12px; font-size: 14px; }
+    header.top { flex-direction: column; gap: 0; }
+  }
 </style>
 </head>
 <body>
 <header class="top">
   <a class="home" href="{{ url('/') }}">MedVision QA</a>
-  <span class="muted">{{ _("web.local_only") }} ·
+  <span class="muted">{{ _("web.public_banner") if public else _("web.local_only") }} ·
     {% if lang == "ja" %}<a href="{{ path }}" lang="en" hreflang="en">English</a>{% else %}<a href="{{ path }}?lang=ja" lang="ja" hreflang="ja">日本語</a>{% endif %}</span>
 </header>
 {% block content %}{% endblock %}
-<footer class="note"><p>{{ _("web.footer") }}</p></footer>
+<footer class="note"><p>{{ _("web.footer") }} <a href="{{ github }}">GitHub</a></p></footer>
 </body>
 </html>
