@@ -212,6 +212,18 @@ def test_home_page_in_japanese(client):
     assert 'href="/" lang="en"' in page  # switch back to English
 
 
+def test_home_page_previews_the_example_files(client):
+    page = client.get("/").text
+    assert page.count("<details>") == 4 and "<script" not in page
+    assert "schema_version" in page and "Synthetic demonstration" in page  # config.toml in full
+    first = (DEMO / "ground_truth.csv").read_text(encoding="utf-8").splitlines()[1].split(",")
+    assert all(f"<td><code>{v}</code></td>" in page for v in first)
+    assert "<th><code>score_glioma</code></th>" in page
+    assert page.count("first 5 of 872 rows") == 3
+    ja = client.get("/?lang=ja").text
+    assert "<code>config.ja.toml</code>" in ja and "全 872 行のうち最初の 5 行" in ja
+
+
 def test_unknown_language_falls_back_to_english(client):
     page = client.get("/?lang=xx").text
     assert '<html lang="en">' in page and "New evaluation" in page
@@ -294,6 +306,7 @@ def test_public_home_has_no_history_and_warns(public_client):
     assert "Do not upload patient data" in page and "No evaluations yet." not in page
     assert "local use" not in page and "<script" not in page
     assert "公開デモ" in public_client.get("/?lang=ja").text
+    assert page.count("<details>") == 4
 
 
 def test_public_upload_returns_reports_and_keeps_nothing(public_client, tmp_path):
