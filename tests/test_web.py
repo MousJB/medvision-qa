@@ -269,6 +269,12 @@ def test_demo_pages_computed_from_committed_files(client):
     assert 'class="state INCONCLUSIVE"' in mri.text and "resnet18-figshare-v1" in mri.text
     assert "64 patients" in mri.text and "says nothing about clinical performance" in mri.text
     assert "<script" not in synthetic.text + mri.text
+    rsna = client.get("/demo/rsna-pneumonia")
+    assert rsna.status_code == 200
+    assert 'class="state SATISFIED"' in rsna.text and "frcnn-r50-fpn-384" in rsna.text
+    assert "2,290 patients" in rsna.text and "says nothing about clinical performance" in rsna.text
+    assert "<script" not in rsna.text
+    assert "/demo/rsna-pneumonia" in client.get("/").text
 
 
 def test_demo_reports(client):

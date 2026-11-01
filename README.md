@@ -28,7 +28,7 @@ Each design choice below is checked by code, tests or the git history.
 |---|---|---|
 | Invalid input is rejected, never cleaned | A silently dropped row changes the metrics without anyone knowing | Every violation is reported with file, line, column and rule: [validation.py](src/medvision_qa/validation.py), [tests/test_validation.py](tests/test_validation.py) |
 | Cases are joined on `case_id`, never on row order | Two files in different orders would otherwise be compared case against wrong case | Missing or extra cases are errors: [alignment.py](src/medvision_qa/alignment.py), [tests/test_alignment.py](tests/test_alignment.py) |
-| Criteria are written before the results | Choosing a threshold after seeing the results biases the conclusion | The MRI criteria were committed in `6de2a12`, before any training. The report records the SHA-256 of the configuration |
+| Criteria are written before the results | Choosing a threshold after seeing the results biases the conclusion | The MRI criteria were committed in `06b332f`, before any training. The report records the SHA-256 of the configuration |
 | Decisions use confidence-interval bounds only | A point estimate above a threshold is not evidence | The interval contains the threshold → INCONCLUSIVE, never SATISFIED. Non-inferiority needs a margin set in advance: [decision_engine.py](src/medvision_qa/decision_engine.py) |
 | Resampling by patient when `patient_id` is given | Slices of one patient are not independent; a per-image bootstrap gives intervals that are too narrow | Interval more than 2× too narrow on a synthetic example: [tests/test_confidence_intervals.py](tests/test_confidence_intervals.py). McNemar is disabled when pairs are clustered |
 | An undefined metric stays undefined | Replacing 0/0 with 0 makes a model look worse or better than it is | Each undefined value carries its reason: [docs/metrics.md](docs/metrics.md) |
@@ -51,6 +51,16 @@ the Kaggle MRI-BT dataset. Details:
 [experiments/brain_mri/README.md](experiments/brain_mri/README.md). Reports:
 [English](experiments/brain_mri/figshare_eval/report.html),
 [Japanese](experiments/brain_mri/figshare_eval/report.ja.html).
+
+## Result on real chest X-ray data
+
+Two lung-opacity detectors (Faster R-CNN at 512 px and 384 px) trained on the RSNA Pneumonia
+Detection Challenge data, patient-disjoint test split (2,290 patients, 5,349 images), criteria
+fixed before training: **SATISFIED**. At image level, the 384 px version is not inferior in
+AUROC, sensitivity and specificity (its specificity is 1.4 points lower, within the 0.05
+margin). Details: [experiments/rsna_pneumonia/README.md](experiments/rsna_pneumonia/README.md).
+Reports: [English](experiments/rsna_pneumonia/report.html),
+[Japanese](experiments/rsna_pneumonia/report.ja.html).
 
 ## Demo (synthetic data)
 
@@ -76,8 +86,9 @@ The CSV files in [examples/synthetic_demo/](examples/synthetic_demo/) are **synt
 <https://medvision-qa.vercel.app> serves the same web interface in a public, stateless mode
 (`create_app(public_demo=True)` in [app.py](app.py)):
 
-- `/demo/synthetic` and `/demo/brain-mri` run the evaluation on the server from the files
-  committed in this repository (about 10 s on the first request of a server instance). The
+- `/demo/synthetic`, `/demo/brain-mri` and `/demo/rsna-pneumonia` run the evaluation on the
+  server from the files committed in this repository (on the first request of a server
+  instance: about 10 s, about 20 s for the 5,349 chest X-rays). The
   brain MRI report computed online is identical to
   [the committed one](experiments/brain_mri/figshare_eval/report.html) except for the run
   identifier, the date and the Python patch version.
@@ -220,6 +231,22 @@ To reproduce the tested environment exactly: `pip install -r requirements-lock.t
 - No pickle files or models are loaded: the tool only reads CSV files and a TOML
   configuration.
 - The tests use synthetic data, always identified as such.
+
+## Commit hashes
+
+On 2026-11-01 the history was rewritten to remove co-author lines from commit messages.
+Only the messages changed: every commit keeps its file tree, author and date, but gets a new
+hash. The READMEs and the audit cite the new hashes. Files that are records keep the hashes
+they were written with: protocols, `config.toml` files, Version Verification Records and
+training logs. Commits cited in the repository:
+
+| Original | Current | Commit |
+|---|---|---|
+| `6de2a12` | `06b332f` | MRI protocol and acceptance criteria, fixed before training |
+| `dedb768` | `19733fa` | byte-exact `.gitattributes` for evaluation files (HEAD during MRI training) |
+| `2bcfb77` | `2f9893c` | duplicate detection and MRI experiment scripts (code that ran) |
+| `3a387f5` | `ea4dbbe` | MRI results on real data and MRI-BT audit |
+| `ea6a4cf` | `d64950b` | translation into English, Japanese outputs (audit scope) |
 
 ## Languages
 

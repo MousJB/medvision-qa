@@ -2,3 +2,4 @@
 examples/**/*.csv -text
 examples/**/*.toml -text
 experiments/**/figshare_eval/* -text
+experiments/rsna_pneumonia/** -text

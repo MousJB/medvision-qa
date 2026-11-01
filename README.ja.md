@@ -26,7 +26,7 @@
 |---|---|---|
 | 不正な入力は修正せずに却下する | 黙って削除された行は、誰も気づかないまま指標を変えてしまう | すべての違反をファイル、行、列、規則とともに報告: [validation.py](src/medvision_qa/validation.py)、[tests/test_validation.py](tests/test_validation.py) |
 | 症例は行の順番ではなく `case_id` で結合する | 順番の異なる 2 つのファイルでは、別の症例どうしを比較してしまう | 欠けている症例や余分な症例はエラー: [alignment.py](src/medvision_qa/alignment.py)、[tests/test_alignment.py](tests/test_alignment.py) |
-| 基準は結果を見る前に書く | 結果を見てから閾値を選ぶと結論に偏りが生じる | MRI の基準は学習前にコミット `6de2a12` で確定。レポートには設定ファイルの SHA-256 を記録 |
+| 基準は結果を見る前に書く | 結果を見てから閾値を選ぶと結論に偏りが生じる | MRI の基準は学習前にコミット `06b332f` で確定。レポートには設定ファイルの SHA-256 を記録 |
 | 判定には信頼区間の境界のみを使う | 点推定が閾値を上回っても証拠にはならない | 区間が閾値を含む → INCONCLUSIVE（SATISFIED にはならない）。非劣性には事前に定めたマージンが必要: [decision_engine.py](src/medvision_qa/decision_engine.py) |
 | `patient_id` があれば患者単位で再標本化する | 同じ患者のスライスは独立ではなく、画像単位のブートストラップでは区間が狭すぎる | 合成データの例で区間が 2 倍以上狭くなることを確認: [tests/test_confidence_intervals.py](tests/test_confidence_intervals.py)。ペアがクラスター化している場合はマクネマー検定を無効化 |
 | 定義できない指標は未定義のままにする | 0/0 を 0 に置き換えると、モデルが実際より悪く（または良く）見える | 未定義の値にはそれぞれ理由が付く: [docs/ja/metrics.md](docs/ja/metrics.md) |
@@ -49,6 +49,16 @@ ResNet18 は SimpleCNN に劣らず、AUROC も優れていますが、神経膠
 [experiments/brain_mri/README.ja.md](experiments/brain_mri/README.ja.md)。レポート:
 [日本語](experiments/brain_mri/figshare_eval/report.ja.html)、
 [英語](experiments/brain_mri/figshare_eval/report.html)。
+
+## 実胸部 X 線データでの結果
+
+RSNA Pneumonia Detection Challenge のデータで学習した 2 つの肺野陰影検出器（Faster R-CNN、512 px と
+384 px）を、患者単位で分離したテスト分割（2,290 患者、5,349 枚）で、学習前に定めた基準により評価した
+結果は **SATISFIED** でした。画像単位で、384 px 版は AUROC、感度、特異度のいずれも劣っていません
+（特異度は 1.4 ポイント低いものの、マージン 0.05 の範囲内）。詳細:
+[experiments/rsna_pneumonia/README.ja.md](experiments/rsna_pneumonia/README.ja.md)。レポート:
+[日本語](experiments/rsna_pneumonia/report.ja.html)、
+[英語](experiments/rsna_pneumonia/report.html)。
 
 ## デモ（合成データ）
 
@@ -74,8 +84,9 @@ python -m medvision_qa examples/synthetic_demo/config.toml -o reports/demo.html
 <https://medvision-qa.vercel.app/?lang=ja> は、同じ Web インターフェースを、状態を持たない
 公開モードで提供します（[app.py](app.py) の `create_app(public_demo=True)`）。
 
-- `/demo/synthetic` と `/demo/brain-mri` は、このリポジトリに含まれるファイルから、サーバー上で
-  評価を実行します（サーバーインスタンスの最初のリクエストで約 10 秒）。オンラインで計算した
+- `/demo/synthetic`、`/demo/brain-mri`、`/demo/rsna-pneumonia` は、このリポジトリに含まれる
+  ファイルから、サーバー上で評価を実行します（サーバーインスタンスの最初のリクエストで約 10 秒、
+  胸部 X 線 5,349 枚では約 20 秒）。オンラインで計算した
   脳 MRI のレポートは、[リポジトリ内のレポート](experiments/brain_mri/figshare_eval/report.ja.html)
   と、実行 ID、日時、Python のパッチバージョンを除いて同一です。
 - アップロードされたファイルは一時フォルダーで評価され、応答の送信前に削除されます。履歴はなく、
@@ -213,6 +224,22 @@ pytest
   医用画像、モデルの重みを除外しています。
 - pickle ファイルやモデルは読み込みません。読み込むのは CSV と TOML 設定ファイルのみです。
 - テストには合成データを使い、常に合成データであることを明示しています。
+
+## コミットハッシュ
+
+2026-11-01 に、コミットメッセージから共著者の行を削除するため履歴を書き換えました。変更したのは
+メッセージのみで、各コミットのファイルツリー、作成者、日時は同じですが、ハッシュは新しくなりました。
+README と監査文書は新しいハッシュを記載しています。記録にあたるファイル（プロトコル、`config.toml`、
+Version Verification Record、学習ログ）は作成時のハッシュをそのまま残しています。リポジトリ内で
+参照しているコミット：
+
+| 元のハッシュ | 現在のハッシュ | コミット |
+|---|---|---|
+| `6de2a12` | `06b332f` | MRI のプロトコルと受け入れ基準（学習前に確定） |
+| `dedb768` | `19733fa` | 評価ファイルのバイト固定 `.gitattributes`（MRI 学習時の HEAD） |
+| `2bcfb77` | `2f9893c` | 重複検出と MRI 実験スクリプト（実行したコード） |
+| `3a387f5` | `ea4dbbe` | 実 MRI データでの結果と MRI-BT 監査 |
+| `ea6a4cf` | `d64950b` | 英語への翻訳と日本語出力（監査の対象） |
 
 ## 言語
 

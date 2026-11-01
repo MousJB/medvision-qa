@@ -56,6 +56,7 @@ REPORT_FILES = {"en": "report.html", "ja": "report.ja.html"}
 DEMOS = {
     "synthetic": ("examples/synthetic_demo/config.toml", "web.demo_synthetic_note"),
     "brain-mri": ("experiments/brain_mri/figshare_eval/config.toml", "web.demo_mri_note"),
+    "rsna-pneumonia": ("experiments/rsna_pneumonia/config.toml", "web.demo_rsna_note"),
 }
 
 # Public demo: the hosting platform rejects request bodies above 4.5 MB, and the bootstrap
