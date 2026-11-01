@@ -15,6 +15,7 @@ strict CSP headers, no JavaScript, no network calls.
 """
 
 import base64
+import csv
 import functools
 import json
 import os
@@ -50,6 +51,7 @@ GITHUB_URL = "https://github.com/MousJB/medvision-qa"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE_FILES = ("config.toml", "config.ja.toml", "ground_truth.csv", "preds_v1.csv", "preds_v2.csv")
 REPORT_FILES = {"en": "report.html", "ja": "report.ja.html"}
+EXAMPLE_PREVIEW_ROWS = 5
 
 # Evaluations anyone can run in one click: configuration path (from the project root) and
 # the note that says where the predictions come from. Both are committed in the repository.
@@ -135,6 +137,24 @@ def _save_uploads(workspace: Path, config: UploadFile | None, data_files: list[U
     return workspace / config.filename
 
 
+def _example_previews(example_dir: Path) -> dict:
+    """Contents shown on the home page, so the input format can be seen without downloading:
+    each configuration in full, the header and first rows of each CSV with its row count."""
+    previews = {}
+    for name in EXAMPLE_FILES:
+        path = example_dir / name
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        if name.endswith(".csv"):
+            rows = list(csv.reader(text.splitlines()))
+            previews[name] = {"header": rows[0], "rows": rows[1:1 + EXAMPLE_PREVIEW_ROWS],
+                              "total": len(rows) - 1}
+        else:
+            previews[name] = {"text": text}
+    return previews
+
+
 def _criteria_summary(result) -> str:
     return json.dumps([{"id": r.criterion.id, "description": r.criterion.description,
                         "quantity": r.quantity, "state": r.state, "reason": dump_message(r.reason)}
@@ -186,6 +206,7 @@ def create_app(data_dir=None, public_demo: bool = False, project_root=PROJECT_RO
     """
     project_root = Path(project_root).resolve()
     example_dir = project_root / "examples" / "synthetic_demo"
+    example_previews = _example_previews(example_dir)
     history = runs_dir = None
     if not public_demo:
         if data_dir is None:
@@ -224,7 +245,7 @@ def create_app(data_dir=None, public_demo: bool = False, project_root=PROJECT_RO
         max_bytes = PUBLIC_MAX_FILE_BYTES if public_demo else MAX_FILE_BYTES
         return _page("web_index.html.j2", lang, status_code=status_code, path="/", errors=list(errors),
                      history=[] if public_demo else history.recent(), load_messages=load_messages,
-                     example_files=EXAMPLE_FILES, max_files=MAX_DATA_FILES, max_mb=max_bytes // (1024 * 1024),
+                     example_files=EXAMPLE_FILES, previews=example_previews, max_files=MAX_DATA_FILES, max_mb=max_bytes // (1024 * 1024),
                      max_resamples=PUBLIC_MAX_RESAMPLES, **common)
 
     def result_page(result, lang, path, actions, note=None):

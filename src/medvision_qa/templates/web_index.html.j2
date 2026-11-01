@@ -47,6 +47,24 @@
 {{ _("web.format_docs") }} <a href="{{ github }}/blob/main/{{ docs }}data_format.md"><code>{{ docs }}data_format.md</code></a>,
 <a href="{{ github }}/blob/main/{{ docs }}evaluation_config.md"><code>{{ docs }}evaluation_config.md</code></a></p>
 
+{% set config_name = "config.ja.toml" if lang == "ja" else "config.toml" %}
+<div class="previews">
+<p class="note">{{ _("web.preview_intro") }} <a href="{{ url('/demo/synthetic') }}">{{ _("web.preview_result") }}</a></p>
+{% if config_name in previews %}
+<details><summary><code>{{ config_name }}</code> — {{ _("web.preview_config") }}</summary>
+<pre>{{ previews[config_name].text }}</pre></details>
+{% endif %}
+{% for name in example_files if name.endswith(".csv") and name in previews %}
+{% set p = previews[name] %}
+<details><summary><code>{{ name }}</code> — {{ _("web.preview_rows", shown=p.rows|length, total=p.total) }}</summary>
+<div class="scroll"><table>
+  <tr>{% for h in p.header %}<th><code>{{ h }}</code></th>{% endfor %}</tr>
+  {% for row in p.rows %}<tr>{% for v in row %}<td><code>{{ v }}</code></td>{% endfor %}</tr>
+  {% endfor %}
+</table></div></details>
+{% endfor %}
+</div>
+
 {% if not public %}
 <h2>{{ _("web.history") }}</h2>
 {% if history %}

@@ -42,6 +42,12 @@
   a.card:hover, a.card:focus { border-color: var(--accent); background: var(--bg-alt); }
   a.card strong { color: var(--accent); }
   input[type=file] { max-width: 100%; }
+  .previews details { border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; margin: 8px 0; }
+  .previews summary { cursor: pointer; }
+  .previews details[open] summary { margin-bottom: 8px; }
+  .previews pre { background: var(--bg-alt); padding: 8px 12px; overflow-x: auto; margin: 0;
+                  font: .8rem/1.5 ui-monospace, Consolas, monospace; }
+  .previews td code, .previews th code { overflow-wrap: normal; }
   @media (max-width: 600px) {
     body { padding: 12px; font-size: 14px; }
     header.top { flex-direction: column; gap: 0; }
